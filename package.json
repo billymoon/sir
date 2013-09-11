@@ -1,6 +1,6 @@
 {
     "name": "sir"
-  , "version": "0.0.1"
+  , "version": "0.0.2"
   , "description": "Simple command-line development server built with connect"
   , "keywords": ["static", "server", "connect"]
   , "author": "Billy Moon <billy@itaccess.org>"
