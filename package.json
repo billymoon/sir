@@ -1,6 +1,6 @@
 {
     "name": "sir"
-  , "version": "0.0.2"
+  , "version": "0.0.3"
   , "description": "Simple command-line development server built with connect"
   , "keywords": ["static", "server", "connect"]
   , "author": "Billy Moon <billy@itaccess.org>"
@@ -18,6 +18,8 @@
     , "commander": "0.6.1"
     , "coffee-script": "*"
     , "marked": "*"
+    , "underscore": "*"
+    , "bytes": "*"
   }
   , "bin": { "sir": "./bin/sir" }
 }

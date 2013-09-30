@@ -12,6 +12,7 @@ var resolve = require('path').resolve
   , coffee = require('coffee-script')
   , marked = require('marked')
   , connect = require('connect')
+  , directory = require('./directory')
   , stylus = require('stylus')
   , jade = require('jade')
   , less = require('less-middleware')
@@ -179,7 +180,7 @@ server.use(connect.static(path, { hidden: program.hidden }));
 // directory serving
 
 if (program.dirs) {
-    server.use(connect.directory(path, {
+    server.use(directory(path, {
       hidden: program.hidden
     , icons: program.icons
   }));
