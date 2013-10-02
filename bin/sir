@@ -1,6 +1,15 @@
 #!/usr/bin/env node
 
 
+process.on('uncaughtException', function (err) {
+  if(err.code == "EADDRINUSE"){
+    var port = program.port ? "port " + program.port : "the port"
+    console.error("looks like "+port+" is already in use\ntry a different port with: --port <PORT>")
+  } else {
+    console.error(err.syscall + " " + err.code)  
+  }
+})
+
 /**
  * Module dependencies.
  */
