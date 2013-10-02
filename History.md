@@ -1,3 +1,7 @@
+0.0.4 / 2013-09-30
+
+  * add icons for folders
+
 0.0.3 / 2013-09-30
 
   * extract directory from connect allowing further customisation of directory listing
