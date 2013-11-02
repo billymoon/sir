@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-
 process.on('uncaughtException', function (err) {
   if(err.code == "EADDRINUSE"){
     var port = program.port ? "port " + program.port : "the port"
@@ -99,7 +98,7 @@ var setup = function(type){
   server.use(function(req, res, next){
     var rex = new RegExp("\\."+tech.next+"$");
     if (!req.url.match(rex)) return next();
-    var file = join(path, url.parse(req.url).pathname);
+    var file = join(path, decodeURI(url.parse(req.url).pathname));
     var rend = file.replace(rex,"."+tech.ext);
     if(fs.existsSync(rend)){
       fs.readFile(rend, 'utf8', function(err, str){
@@ -121,7 +120,7 @@ var setup = function(type){
   server.use(function(req, res, next){
     var rex = new RegExp("\\."+tech.ext+"$");
     if (!req.url.match(rex)) return next();
-    var file = join(path, url.parse(req.url).pathname);
+    var file = join(path, decodeURI(url.parse(req.url).pathname));
     if(fs.existsSync(file)){
       fs.readFile(file, 'utf8', function(err, str){
         if (err) return next(err);
