@@ -72,6 +72,15 @@ var types = {
       return coffee.compile(str)
     }
   },
+  litcoffee: {
+    ext: 'coffee.md',
+    next: 'js',
+    mime: 'application/javascript',
+    flag: program.coffee,
+    process: function(str, file){
+      return coffee.compile(str, {literate: true})
+    }
+  },
   jade: {
     ext: 'jade',
     next: 'html?',
@@ -196,6 +205,6 @@ if (program.dirs) {
 
 // start the server
 server.listen(program.port, function () {
-  console.log('\033[90mserving \033[36m%s\033[90m on port \033[96m%d\033[0m', path, program.port);
+  console.log('serving \033[36m%s\033[0m on port \033[96m%d\033[0m', path, program.port);
 });
 
