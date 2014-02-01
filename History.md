@@ -1,3 +1,8 @@
+0.1.0 / 2014-02-01
+
+  * list all generated files (md, coffee.md, jade, styl, less)
+  * don't save generated css files, just serve them up
+
 0.0.6 / 2014-01-30
 
   * fix bug where path passed as parameter breaks server
