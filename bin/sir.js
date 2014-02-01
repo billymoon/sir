@@ -116,7 +116,6 @@ var types = {
     mime: 'text/css',
     flag: program.stylus,
     process: function(str, file){
-      console.log(stylus.render(str))
       return stylus.render(str);
     }
   },
