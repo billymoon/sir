@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 
 process.on('uncaughtException', function (err) {
+  console.log(err)
   if(err.code == "EADDRINUSE"){
     var port = program.port ? "port " + program.port : "the port"
     console.error("looks like "+port+" is already in use\ntry a different port with: --port <PORT>")
   } else {
-    console.error(err.syscall + " " + err.code)  
+    console.error(err.syscall + " " + err.code)
   }
 })
 
@@ -23,7 +24,7 @@ var resolve = require('path').resolve
   , directory = require('../lib/directory/directory.js')
   , stylus = require('stylus')
   , jade = require('jade')
-  , less = require('less-middleware')
+  , less = require('less')
   , url = require('url')
   , fs = require('fs');
 
@@ -33,7 +34,7 @@ program
   .version(require('../package.json').version)
   .usage('[options] [dir]')
   .option('-F, --format <fmt>', 'specify the log format string', 'dev')
-  .option('-p, --port <port>', 'specify the port [3000]', Number, 3000)
+  .option('-p, --port <port>', 'specify the port [8080]', Number, 8080)
   .option('-H, --hidden', 'enable hidden file serving')
   .option('-S, --no-stylus', 'disable stylus rendering')
   .option('-J, --no-jade', 'disable jade rendering')
@@ -99,6 +100,36 @@ var types = {
     process: function(str, file){
       return marked(str);
     }
+  },
+  litcoffeemd: {
+    ext: 'coffee.md',
+    next: 'html?',
+    mime: 'text/html',
+    flag: program.markdown,
+    process: function(str, file){
+      return marked(str);
+    }
+  },
+  stylus: {
+    ext: 'styl',
+    next: 'css',
+    mime: 'text/css',
+    flag: program.stylus,
+    process: function(str, file){
+      console.log(stylus.render(str))
+      return stylus.render(str);
+    }
+  },
+  less: {
+    ext: 'less',
+    next: 'css',
+    mime: 'text/css',
+    flag: program.less,
+    process: function(str, file){
+      var css;
+      less.render(str, function(e, compiled){ css = compiled; })
+      return css;
+    }
   }
 };
 
@@ -150,22 +181,6 @@ for (var type in types) {
   if (types[type].flag) {
     setup(type)
   }
-}
-
-// convert .styl to .css to trick stylus.middleware
-if (program.stylus) {
-  server.use(function(req, res, next){
-    req.url = req.url.replace(/\.styl$/, '.css');
-    next();
-  });
-}
-
-// stylus
-server.use(stylus.middleware({ src: path }));
-
-// less
-if (program.less) {
-  server.use(less({ src: path }));
 }
 
 // CORS access for files

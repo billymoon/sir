@@ -1,25 +1,31 @@
 {
-    "name": "sir"
-  , "version": "0.0.6"
-  , "description": "Simple command-line development server built with connect"
-  , "keywords": ["static", "server", "connect"]
-  , "author": "Billy Moon <billy@itaccess.org>"
-  , "preferGlobal": true
-  , "homepage": "https://github.com/billymoon/sir"
-  , "repository": {
-      "type": "git"
-    , "url": "https://github.com/billymoon/sir.git"
+  "name": "sir",
+  "version": "0.1.0",
+  "description": "Simple command-line development server built with connect",
+  "keywords": [
+    "static",
+    "server",
+    "connect"
+  ],
+  "author": "Billy Moon <billy@itaccess.org>",
+  "preferGlobal": true,
+  "homepage": "https://github.com/billymoon/sir",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/billymoon/sir.git"
+  },
+  "dependencies": {
+    "connect": "2.3.x",
+    "stylus": "*",
+    "jade": "*",
+    "commander": "0.6.1",
+    "coffee-script": "*",
+    "marked": "*",
+    "underscore": "*",
+    "bytes": "*",
+    "less": "~1.6.1"
+  },
+  "bin": {
+    "sir": "./bin/sir.js"
   }
-  , "dependencies": {
-      "connect": "2.3.x"
-    , "stylus": "*"
-    , "jade": "*"
-    , "less-middleware": "*"
-    , "commander": "0.6.1"
-    , "coffee-script": "*"
-    , "marked": "*"
-    , "underscore": "*"
-    , "bytes": "*"
-  }
-  , "bin": { "sir": "./bin/sir" }
 }
