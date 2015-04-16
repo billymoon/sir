@@ -1,32 +1,32 @@
 #!/usr/bin/env node
 
 process.on('uncaughtException', function (err) {
-  console.log(err)
+  console.log(err);
   if(err.code == "EADDRINUSE"){
-    var port = program.port ? "port " + program.port : "the port"
-    console.error("looks like "+port+" is already in use\ntry a different port with: --port <PORT>")
+    var port = program.port ? "port " + program.port : "the port";
+    console.error("looks like "+port+" is already in use\ntry a different port with: --port <PORT>");
   } else {
-    console.error(err.syscall + " " + err.code)
+    console.error(err.syscall + " " + err.code);
   }
-})
+});
 
 /**
  * Module dependencies.
  */
 
-var resolve = require('path').resolve
-  , join = require('path').join
-  , exec = require('child_process').exec
-  , program = require('commander')
-  , coffee = require('coffee-script')
-  , marked = require('marked')
-  , connect = require('connect')
-  , directory = require('../lib/directory/directory.js')
-  , stylus = require('stylus')
-  , jade = require('jade')
-  , less = require('less')
-  , url = require('url')
-  , fs = require('fs');
+var resolve = require('path').resolve,
+  join = require('path').join,
+  exec = require('child_process').exec,
+  program = require('commander'),
+  coffee = require('coffee-script'),
+  marked = require('marked'),
+  connect = require('connect'),
+  directory = require('../lib/directory/directory.js'),
+  stylus = require('stylus'),
+  jade = require('jade'),
+  less = require('less'),
+  url = require('url'),
+  fs = require('fs');
 
 // CLI
 
@@ -70,7 +70,7 @@ var types = {
     mime: 'application/javascript',
     flag: program.coffee,
     process: function(str, file){
-      return coffee.compile(str)
+      return coffee.compile(str);
     }
   },
   litcoffee: {
@@ -79,7 +79,7 @@ var types = {
     mime: 'application/javascript',
     flag: program.coffee,
     process: function(str, file){
-      return coffee.compile(str, {literate: true})
+      return coffee.compile(str, {literate: true});
     }
   },
   jade: {
@@ -126,7 +126,7 @@ var types = {
     flag: program.less,
     process: function(str, file){
       var css;
-      less.render(str, function(e, compiled){ css = compiled; })
+      less.render(str, function(e, compiled){ css = compiled; });
       return css;
     }
   }
@@ -143,7 +143,7 @@ var setup = function(type){
       fs.readFile(rend, 'utf8', function(err, str){
         if (err) return next(err);
         try {
-          var str = tech.process(str, file); // custom function can use/discard args as needed
+          str = tech.process(str, file); // custom function can use/discard args as needed
           res.setHeader('Content-Type', tech.mime);
           res.setHeader('Content-Length', Buffer.byteLength(str));
           res.end(str);
@@ -173,12 +173,12 @@ var setup = function(type){
       });      
     }
   });
-}
+};
 
 // do setup for each defined renderable extension
 for (var type in types) {
   if (types[type].flag) {
-    setup(type)
+    setup(type);
   }
 }
 
@@ -212,8 +212,8 @@ server.use(connect.static(path, { hidden: program.hidden }));
 
 if (program.dirs) {
     server.use(directory(path, {
-      hidden: program.hidden
-    , icons: program.icons
+      hidden: program.hidden,
+      icons: program.icons
   }));
 }
 
