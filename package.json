@@ -1,7 +1,7 @@
 {
   "name": "sir",
   "version": "0.1.1",
-  "description": "Simple command-line development server built with connect",
+  "description": "The polite development server - built with connect",
   "keywords": [
     "static",
     "server",
