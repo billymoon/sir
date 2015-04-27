@@ -207,6 +207,7 @@ if (program.exec) {
 
 // static files
 server.use(connect.static(path, { hidden: program.hidden }));
+server.use(connect.static(__dirname+'/../misc/vendor', { hidden: program.hidden }));
 
 // directory serving
 
