@@ -207,14 +207,18 @@ if (program.exec) {
 
 // static files
 server.use(connect.static(path, { hidden: program.hidden }));
-server.use(connect.static(__dirname+'/../misc/vendor', { hidden: program.hidden }));
+server.use(connect.static(__dirname+'/../lib/extra', { hidden: program.hidden }));
 
 // directory serving
 
 if (program.dirs) {
-    server.use(directory(path, {
-      hidden: program.hidden,
-      icons: program.icons
+  server.use(directory(path, {
+    hidden: program.hidden,
+    icons: program.icons
+  }));
+  server.use(directory(__dirname+'/../lib/extra', {
+    hidden: program.hidden,
+    icons: program.icons
   }));
 }
 
