@@ -136,7 +136,7 @@ var setup = function(type){
   var tech = types[type];
   server.use(function(req, res, next){
     var rex = new RegExp("\\."+tech.next+"$");
-    if (!req.url.match(rex)) return next();
+    if (!url.parse(req.originalUrl).pathname.match(rex)) return next();
     var file = join(path, decodeURI(url.parse(req.url).pathname));
     var rend = file.replace(rex,"."+tech.ext);
     if(fs.existsSync(rend)){
