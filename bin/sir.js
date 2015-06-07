@@ -27,7 +27,8 @@ var resolve = require('path').resolve,
   less = require('less'),
   url = require('url'),
   fs = require('fs'),
-  illiterate = require('illiterate');
+  illiterate = require('illiterate'),
+  slm = require('slm');
 
 // CLI
 
@@ -43,6 +44,7 @@ program
   .option('    --no-coffee', 'disable coffee script rendering')
   .option('    --no-markdown', 'disable markdown rendering')
   .option('    --no-illiterate', 'disable illiterate rendering')
+  .option('    --no-slim', 'disable slim rendering')
   .option('-I, --no-icons', 'disable icons')
   .option('-L, --no-logs', 'disable request logging')
   .option('-D, --no-dirs', 'disable directory serving')
@@ -101,6 +103,15 @@ var types = {
     process: function(str, file){
       var fn = jade.compile(str, { filename: file });
       return fn();
+    }
+  },
+  slim: {
+    ext: 'slim',
+    next: 'html?',
+    mime: 'text/html',
+    flag: program.slim,
+    process: function(str, file){
+      return slm.render(str);
     }
   },
   markdown: {
