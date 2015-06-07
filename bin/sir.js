@@ -66,6 +66,24 @@ server.use(connect.favicon(program.favicon));
 // logger
 if (program.logs) server.use(connect.logger(program.format));
 
+// slm template helpers
+
+slm.template.registerEmbeddedFunction('markdown', marked);
+
+slm.template.registerEmbeddedFunction('coffee', function(str){ 
+  return '<script>'+coffee.compile(str)+'</script>';
+});
+
+slm.template.registerEmbeddedFunction('less', function(str){ 
+  var css;
+  less.render(str, function(e, compiled){ css = compiled; });
+  return '<style type="text/css">'+css+'</style>';
+});
+
+slm.template.registerEmbeddedFunction('stylus', function(str){ 
+  return '<style type="text/css">'+stylus.render(str)+'</style>';
+});
+
 // file types for plain serving and alter-ego extension rendering
 var types = {
   coffee: {
