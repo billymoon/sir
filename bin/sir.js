@@ -26,7 +26,8 @@ var resolve = require('path').resolve,
   jade = require('jade'),
   less = require('less'),
   url = require('url'),
-  fs = require('fs');
+  fs = require('fs'),
+  illiterate = require('illiterate');
 
 // CLI
 
@@ -41,6 +42,7 @@ program
   .option('    --no-less', 'disable less css rendering')
   .option('    --no-coffee', 'disable coffee script rendering')
   .option('    --no-markdown', 'disable markdown rendering')
+  .option('    --no-illiterate', 'disable illiterate rendering')
   .option('-I, --no-icons', 'disable icons')
   .option('-L, --no-logs', 'disable request logging')
   .option('-D, --no-dirs', 'disable directory serving')
@@ -80,6 +82,15 @@ var types = {
     flag: program.coffee,
     process: function(str, file){
       return coffee.compile(str, {literate: true});
+    }
+  },
+  litjs: {
+    ext: 'js.md',
+    next: 'js',
+    mime: 'application/javascript',
+    flag: program.illiterate,
+    process: function(str, file){
+      return illiterate(str);
     }
   },
   jade: {
