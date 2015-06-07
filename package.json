@@ -1,12 +1,16 @@
 {
   "name": "sir",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "The polite development server - built with connect",
   "keywords": [
     "static",
     "server",
     "connect"
   ],
+  "scripts": {
+    "fetch": "./node_modules/bower-installer/node_modules/bower/bin/bower install",
+    "vendor": "./node_modules/bower-installer/bower-installer.js"
+  },
   "author": "Billy Moon <billy@itaccess.org>",
   "preferGlobal": true,
   "homepage": "https://github.com/billymoon/sir",
@@ -15,15 +19,16 @@
     "url": "https://github.com/billymoon/sir.git"
   },
   "dependencies": {
-    "connect": "2.3.x",
-    "stylus": "*",
-    "jade": "*",
-    "commander": "0.6.1",
-    "coffee-script": "*",
-    "marked": "*",
-    "underscore": "*",
+    "bower-installer": "^1.2.0",
     "bytes": "*",
-    "less": "~1.6.1"
+    "coffee-script": "*",
+    "commander": "0.6.1",
+    "connect": "2.3.x",
+    "jade": "*",
+    "less": "~1.6.1",
+    "marked": "*",
+    "stylus": "*",
+    "underscore": "*"
   },
   "bin": {
     "sir": "./bin/sir.js"

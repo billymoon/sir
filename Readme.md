@@ -65,6 +65,20 @@ Simple command line development server forked from [serve](https://github.com/vi
 
   ![directory listings](http://f.cl.ly/items/100M2C3o0p2u3A0q1o3H/Screenshot.png)
 
+## Extra Awesomeness
+
+You can install of vendor libraries to be additionally served up from a `vendor` folder...
+
+    $ cd node_modules/sir
+    $ npm run fetch -- moment underscore
+    $ npm run vendor
+
+Now you can run `sir` as usual, and will have the relevant files served from `http://localhost:8080/vendor`.
+
+(this feature uses [bower-installer](https://github.com/blittle/bower-installer) under the hood)
+
+**N.B.** this feature should be moved into a `sir` command - something like `sir fetch moment` - pull requests welcome :)
+
 ## License 
 
 (The MIT License)
