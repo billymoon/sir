@@ -1,0 +1,7 @@
+#!/usr/bin/env node
+
+// TODO: figure out why this takes so long
+//require("babel/register");
+
+require('coffee-script/register');
+require('../lib/sir.coffee').run();
