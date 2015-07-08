@@ -2,11 +2,11 @@
 
 process.on('uncaughtException', function (err) {
   console.log(err);
-  if(err.code == "EADDRINUSE"){
-    var port = program.port ? "port " + program.port : "the port";
-    console.error("looks like "+port+" is already in use\ntry a different port with: --port <PORT>");
+  if (err.code === 'EADDRINUSE') {
+    var port = program.port ? 'port ' + program.port : 'the port';
+    console.error('looks like ' + port + ' is already in use\ntry a different port with: --port <PORT>');
   } else {
-    console.error(err.syscall + " " + err.code);
+    console.error(err.syscall + ' ' + err.code);
   }
 });
 
@@ -14,21 +14,22 @@ process.on('uncaughtException', function (err) {
  * Module dependencies.
  */
 
-var resolve = require('path').resolve,
-  join = require('path').join,
-  exec = require('child_process').exec,
-  program = require('commander'),
-  coffee = require('coffee-script'),
-  marked = require('marked'),
-  connect = require('connect'),
-  directory = require('../lib/directory/directory.js'),
-  stylus = require('stylus'),
-  jade = require('jade'),
-  less = require('less'),
-  url = require('url'),
-  fs = require('fs'),
-  illiterate = require('illiterate'),
-  slm = require('slm');
+var resolve = require('path').resolve;
+var join = require('path').join;
+var exec = require('child_process').exec;
+var program = require('commander');
+var coffee = require('coffee-script');
+var marked = require('marked');
+var connect = require('connect');
+var directory = require('../lib/directory/directory.js');
+var stylus = require('stylus');
+var jade = require('jade');
+var less = require('less');
+var url = require('url');
+var fs = require('fs');
+var illiterate = require('illiterate');
+var slm = require('slm');
+var beautify = require('js-beautify');
 
 // CLI
 
@@ -70,18 +71,18 @@ if (program.logs) server.use(connect.logger(program.format));
 
 slm.template.registerEmbeddedFunction('markdown', marked);
 
-slm.template.registerEmbeddedFunction('coffee', function(str){ 
-  return '<script>'+coffee.compile(str)+'</script>';
+slm.template.registerEmbeddedFunction('coffee', function (str) {
+  return '<script>' + coffee.compile(str) + '</script>';
 });
 
-slm.template.registerEmbeddedFunction('less', function(str){ 
+slm.template.registerEmbeddedFunction('less', function (str) {
   var css;
-  less.render(str, function(e, compiled){ css = compiled; });
-  return '<style type="text/css">'+css+'</style>';
+  less.render(str, function (e, compiled) { css = compiled; });
+  return '<style type="text/css">' + css + '</style>';
 });
 
-slm.template.registerEmbeddedFunction('stylus', function(str){ 
-  return '<style type="text/css">'+stylus.render(str)+'</style>';
+slm.template.registerEmbeddedFunction('stylus', function (str) {
+  return '<style type="text/css">' + stylus.render(str) + '</style>';
 });
 
 // file types for plain serving and alter-ego extension rendering
@@ -91,7 +92,7 @@ var types = {
     next: 'js',
     mime: 'application/javascript',
     flag: program.coffee,
-    process: function(str, file){
+    process: function (str, file) {
       return coffee.compile(str);
     }
   },
@@ -100,7 +101,7 @@ var types = {
     next: 'js',
     mime: 'application/javascript',
     flag: program.coffee,
-    process: function(str, file){
+    process: function (str, file) {
       return coffee.compile(str, {literate: true});
     }
   },
@@ -109,7 +110,7 @@ var types = {
     next: 'js',
     mime: 'application/javascript',
     flag: program.illiterate,
-    process: function(str, file){
+    process: function (str, file) {
       return illiterate(str);
     }
   },
@@ -118,7 +119,7 @@ var types = {
     next: 'html?',
     mime: 'text/html',
     flag: program.jade,
-    process: function(str, file){
+    process: function (str, file) {
       var fn = jade.compile(str, { filename: file });
       return fn();
     }
@@ -128,8 +129,8 @@ var types = {
     next: 'html?',
     mime: 'text/html',
     flag: program.slim,
-    process: function(str, file){
-      return slm.render(str);
+    process: function (str, file) {
+      return beautify.html(slm.render(str), {indent_size: 4});
     }
   },
   markdown: {
@@ -137,7 +138,7 @@ var types = {
     next: 'html?',
     mime: 'text/html',
     flag: program.markdown,
-    process: function(str, file){
+    process: function (str, file) {
       return marked(str);
     }
   },
@@ -146,7 +147,7 @@ var types = {
     next: 'html?',
     mime: 'text/html',
     flag: program.markdown,
-    process: function(str, file){
+    process: function (str, file) {
       return marked(str);
     }
   },
@@ -155,7 +156,7 @@ var types = {
     next: 'css',
     mime: 'text/css',
     flag: program.stylus,
-    process: function(str, file){
+    process: function (str, file) {
       return stylus.render(str);
     }
   },
@@ -164,23 +165,23 @@ var types = {
     next: 'css',
     mime: 'text/css',
     flag: program.less,
-    process: function(str, file){
+    process: function (str, file) {
       var css;
-      less.render(str, function(e, compiled){ css = compiled; });
+      less.render(str, function (e, compiled) { css = compiled; });
       return css;
     }
   }
 };
 
-var setup = function(type){
+var setup = function (type) {
   var tech = types[type];
-  server.use(function(req, res, next){
-    var rex = new RegExp("\\."+tech.next+"$");
+  server.use(function (req, res, next) {
+    var rex = new RegExp('\\.' + tech.next + '$');
     if (!url.parse(req.originalUrl).pathname.match(rex)) return next();
     var file = join(path, decodeURI(url.parse(req.url).pathname));
-    var rend = file.replace(rex,"."+tech.ext);
-    if(fs.existsSync(rend)){
-      fs.readFile(rend, 'utf8', function(err, str){
+    var rend = file.replace(rex, '.' + tech.ext);
+    if (fs.existsSync(rend)) {
+      fs.readFile(rend, 'utf8', function (err, str) {
         if (err) return next(err);
         try {
           str = tech.process(str, file); // custom function can use/discard args as needed
@@ -190,18 +191,18 @@ var setup = function(type){
         } catch (err) {
           next(err);
         }
-      });      
+      });
     } else {
       // allow other handlers to have a bash at the same extension
       next();
     }
   });
-  server.use(function(req, res, next){
-    var rex = new RegExp("\\."+tech.ext+"$");
+  server.use(function (req, res, next) {
+    var rex = new RegExp('\\.' + tech.ext + '$');
     if (!req.url.match(rex)) return next();
     var file = join(path, decodeURI(url.parse(req.url).pathname));
-    if(fs.existsSync(file)){
-      fs.readFile(file, 'utf8', function(err, str){
+    if (fs.existsSync(file)) {
+      fs.readFile(file, 'utf8', function (err, str) {
         if (err) return next(err);
         try {
           res.setHeader('Content-Type', 'text/plain');
@@ -210,7 +211,7 @@ var setup = function(type){
         } catch (err) {
           next(err);
         }
-      });      
+      });
     }
   });
 };
@@ -224,11 +225,11 @@ for (var type in types) {
 
 // CORS access for files
 if (program.cors) {
-  server.use(function(req, res, next){
+  server.use(function (req, res, next) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With, Accept, x-csrf-token, origin');
-    if ('OPTIONS' == req.method) return res.end();
+    if (req.method === 'OPTIONS') return res.end();
     next();
   });
 }
@@ -240,14 +241,14 @@ if (program.compress) {
 
 // exec command
 if (program.exec) {
-  server.use(function (req, res, next){
+  server.use(function (req, res, next) {
     exec(program.exec, next);
   });
 }
 
 // static files
 server.use(connect.static(path, { hidden: program.hidden }));
-server.use(connect.static(__dirname+'/../lib/extra', { hidden: program.hidden }));
+server.use(connect.static(__dirname + '/../lib/extra', { hidden: program.hidden }));
 
 // directory serving
 
@@ -256,7 +257,7 @@ if (program.dirs) {
     hidden: program.hidden,
     icons: program.icons
   }));
-  server.use(directory(__dirname+'/../lib/extra', {
+  server.use(directory(__dirname + '/../lib/extra', {
     hidden: program.hidden,
     icons: program.icons
   }));
@@ -264,6 +265,5 @@ if (program.dirs) {
 
 // start the server
 server.listen(program.port, function () {
-  console.log('serving \033[36m%s\033[0m on port \033[96m%d\033[0m', path, program.port);
+  console.log('serving \\033[36m%s\\033[0m on port \\033[96m%d\\033[0m', path, program.port);
 });
-
