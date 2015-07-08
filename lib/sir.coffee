@@ -11,31 +11,53 @@ run = ->
   # Module dependencies.
   ###
 
-  pather = require('path')
-  resolve = require('path').resolve
-  join = require('path').join
-  exec = require('child_process').exec
-  program = require('commander')
-  coffee = require('coffee-script')
-  marked = require('marked')
-  express = require('express')
-  directory = require('../lib/directory/directory.js')
-  stylus = require('stylus')
-  jade = require('jade')
-  less = require('less')
   url = require('url')
   fs = require('fs')
-  illiterate = require('illiterate')
-  slm = require('slm')
-  beautify = require('js-beautify')
+  join = require('path').join
+  resolve = require('path').resolve
+  exec = require('child_process').exec
+
+  program = require('commander')
+
+  express = require('express')
   compression = require('compression')
   morgan = require('morgan')
 
-  # CLI
-  program.version(require('../package.json').version).usage('[options] [dir]').option('-F, --format <fmt>', 'specify the log format string', 'dev').option('-p, --port <port>', 'specify the port [8080]', Number, 8080).option('-H, --hidden', 'enable hidden file serving').option('-S, --no-stylus', 'disable stylus rendering').option('-J, --no-jade', 'disable jade rendering').option('    --no-less', 'disable less css rendering').option('    --no-coffee', 'disable coffee script rendering').option('    --no-markdown', 'disable markdown rendering').option('    --no-illiterate', 'disable illiterate rendering').option('    --no-slim', 'disable slim rendering').option('-I, --no-icons', 'disable icons').option('-L, --no-logs', 'disable request logging').option('-D, --no-dirs', 'disable directory serving').option('-f, --favicon <path>', 'serve the given favicon').option('-C, --cors', 'allows cross origin access serving').option('    --compress', 'gzip or deflate the response').option('    --exec <cmd>', 'execute command on each request').parse process.argv
+  directory = require('../lib/directory/directory.js')
 
-  # path
-  path = resolve(program.args.shift() or '.')
+  coffee = require('coffee-script')
+  marked = require('marked')
+  stylus = require('stylus')
+  jade = require('jade')
+  less = require('less')
+  slm = require('slm')
+
+  illiterate = require('illiterate')
+  beautify = require('js-beautify')
+
+  # CLI
+  program.version(require('../package.json').version)
+    .usage('[options] [dir]')
+    .option('-F, --format <fmt>', 'specify the log format string', 'dev')
+    .option('-p, --port <port>', 'specify the port [8080]', Number, 8080)
+    .option('-H, --hidden', 'enable hidden file serving')
+    .option('-S, --no-stylus', 'disable stylus rendering')
+    .option('-J, --no-jade', 'disable jade rendering')
+    .option('    --no-less', 'disable less css rendering')
+    .option('    --no-coffee', 'disable coffee script rendering')
+    .option('    --no-markdown', 'disable markdown rendering')
+    .option('    --no-illiterate', 'disable illiterate rendering')
+    .option('    --no-slim', 'disable slim rendering')
+    .option('-I, --no-icons', 'disable icons')
+    .option('-L, --no-logs', 'disable request logging')
+    .option('-D, --no-dirs', 'disable directory serving')
+    .option('-f, --favicon <path>', 'serve the given favicon')
+    .option('-C, --cors', 'allows cross origin access serving')
+    .option('    --compress', 'gzip or deflate the response')
+    .option('    --exec <cmd>', 'execute command on each request').parse process.argv
+
+  # sourcepath
+  sourcepath = resolve(program.args.shift() or '.')
 
   # setup the server
   server = express()
@@ -138,7 +160,7 @@ run = ->
       rex = new RegExp('\\.' + tech.next + '$')
       if !url.parse(req.originalUrl).pathname.match(rex)
         return next()
-      file = join(path, decodeURI(url.parse(req.url).pathname))
+      file = join(sourcepath, decodeURI(url.parse(req.url).pathname))
       rend = file.replace(rex, '.' + tech.ext)
       if fs.existsSync(rend)
         fs.readFile rend, 'utf8', (err, str) ->
@@ -160,7 +182,7 @@ run = ->
       rex = new RegExp('\\.' + tech.ext + '$')
       if !req.url.match(rex)
         return next()
-      file = join(path, decodeURI(url.parse(req.url).pathname))
+      file = join(sourcepath, decodeURI(url.parse(req.url).pathname))
       if fs.existsSync(file)
         fs.readFile file, 'utf8', (err, str) ->
           if err
@@ -171,6 +193,11 @@ run = ->
             res.end str
           catch err
             next err
+
+  # exec command
+  if program.exec
+    server.use (req, res, next) ->
+      exec program.exec, next
 
   # do setup for each defined renderable extension
   for type of types
@@ -191,18 +218,13 @@ run = ->
   if program.compress
     server.use compression()
 
-  # exec command
-  if program.exec
-    server.use (req, res, next) ->
-      exec program.exec, next
-
   # static files
-  server.use express.static(path, hidden: program.hidden)
+  server.use express.static(sourcepath, hidden: program.hidden)
   server.use express.static(__dirname + '/../lib/extra', hidden: program.hidden)
 
   # directory serving
   if program.dirs
-    server.use directory(path,
+    server.use directory(sourcepath,
       hidden: program.hidden
       icons: program.icons)
     server.use directory(__dirname + '/../lib/extra',
@@ -211,6 +233,6 @@ run = ->
 
   # start the server
   server.listen program.port, ->
-    console.log 'serving %s on port %d', path, program.port
+    console.log 'serving %s on port %d', sourcepath, program.port
 
 module.exports = run: run
