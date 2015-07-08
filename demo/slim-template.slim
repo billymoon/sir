@@ -1,0 +1,48 @@
+link rel="stylesheet" href="/vendor/bootstrap/bootstrap.css"
+css:
+	body {
+		margin: 15px;
+	}
+less:
+	body {
+		background: lighten(silver, 22%);
+	}
+stylus:
+	body
+		.well
+			color darken(blue, 10)
+.container
+	.row
+
+		.col-sm-12
+			.well
+				markdown:
+					The aim of this demo is to be...
+
+					- nice
+					- awesome
+					- super
+
+					Reload the page to see a new example layout
+
+		- function double(y){
+		-   return 	y * 2;
+		- }
+		- for i=double(3); i--;
+			- width = 2+Math.round(Math.random()*6)
+			.section class=('col-sm-'+width)
+				.alert.alert-success = width
+			.section class=('col-sm-'+(12 - width))
+				.alert.alert-success = 12 - width
+	.row
+		.col-sm-12
+			#footer.well
+coffee:
+	left = right = null
+	for section, i in document.getElementsByClassName 'section'
+		if i % 2
+			right += section.innerText*1
+		else
+			left += section.innerText*1
+	document.getElementById 'footer'
+		.innerText = "total columns on left = #{left}, and right = #{right} (so grand total of #{left+right})"

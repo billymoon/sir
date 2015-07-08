@@ -1,3 +1,20 @@
+0.1.1 / 2014-02-01
+
+  * stop logging styl files to console
+
+0.1.0 / 2014-02-01
+
+  * list all generated files (md, coffee.md, jade, styl, less)
+  * don't save generated css files, just serve them on demand
+
+0.0.6 / 2014-01-30
+
+  * fix bug where path passed as parameter breaks server
+
+0.0.5 / 2013-11-02
+
+  * fix bug where spaces in filenames breaks server
+
 0.0.4 / 2013-09-30
 
   * add icons for folders
@@ -12,6 +29,5 @@
   * Fix line endings so it should work on win/lin/mac
 
 0.0.1 / 2013-09-11
-==================
 
   * Initial release (based on serve 1.3.0)
