@@ -14,13 +14,15 @@ process.on('uncaughtException', function (err) {
  * Module dependencies.
  */
 
+var pather = require('path');
+
 var resolve = require('path').resolve;
 var join = require('path').join;
 var exec = require('child_process').exec;
 var program = require('commander');
 var coffee = require('coffee-script');
 var marked = require('marked');
-var connect = require('connect');
+var express = require('express');
 var directory = require('../lib/directory/directory.js');
 var stylus = require('stylus');
 var jade = require('jade');
@@ -30,6 +32,8 @@ var fs = require('fs');
 var illiterate = require('illiterate');
 var slm = require('slm');
 var beautify = require('js-beautify');
+var compression = require('compression');
+var morgan = require('morgan');
 
 // CLI
 
@@ -59,13 +63,12 @@ program
 var path = resolve(program.args.shift() || '.');
 
 // setup the server
-var server = connect();
-
-// ignore favicon
-server.use(connect.favicon(program.favicon));
+var server = express();
 
 // logger
-if (program.logs) server.use(connect.logger(program.format));
+// TODO: accept log format
+// if (program.logs) server.use(morgan(morgan.compile(program.format)));
+if (program.logs) server.use(morgan('dev'));
 
 // slm template helpers
 
@@ -236,7 +239,7 @@ if (program.cors) {
 
 // compression
 if (program.compress) {
-  server.use(connect.compress());
+  server.use(compression());
 }
 
 // exec command
@@ -247,8 +250,8 @@ if (program.exec) {
 }
 
 // static files
-server.use(connect.static(path, { hidden: program.hidden }));
-server.use(connect.static(__dirname + '/../lib/extra', { hidden: program.hidden }));
+server.use(express.static(path, { hidden: program.hidden }));
+server.use(express.static(__dirname + '/../lib/extra', { hidden: program.hidden }));
 
 // directory serving
 
@@ -265,5 +268,5 @@ if (program.dirs) {
 
 // start the server
 server.listen(program.port, function () {
-  console.log('serving \\033[36m%s\\033[0m on port \\033[96m%d\\033[0m', path, program.port);
+  console.log('serving %s on port %d', path, program.port);
 });
