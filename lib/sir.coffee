@@ -15,7 +15,10 @@ run = ->
   fs = require('fs')
   join = require('path').join
   resolve = require('path').resolve
+  path = require('path')
   exec = require('child_process').exec
+
+  mkdirp = require('mkdirp')
 
   program = require('commander')
 
@@ -23,6 +26,7 @@ run = ->
   compression = require('compression')
   morgan = require('morgan')
 
+  # TODO: use https://www.npmjs.com/package/serve-index
   directory = require('../lib/directory/directory.js')
 
   coffee = require('coffee-script')
@@ -34,30 +38,37 @@ run = ->
 
   illiterate = require('illiterate')
   beautify = require('js-beautify')
+  cheerio = require('cheerio')
+  tinylr = require('tiny-lr')
+  request = require('request')
+
+  onFinished = require('on-finished')
 
   # CLI
   program.version(require('../package.json').version)
-    .usage('[options] [dir]')
-    .option('-F, --format <fmt>', 'specify the log format string', 'dev')
-    .option('-p, --port <port>', 'specify the port [8080]', Number, 8080)
-    .option('-H, --hidden', 'enable hidden file serving')
-    .option('-S, --no-stylus', 'disable stylus rendering')
-    .option('-J, --no-jade', 'disable jade rendering')
-    .option('    --no-less', 'disable less css rendering')
-    .option('    --no-coffee', 'disable coffee script rendering')
-    .option('    --no-markdown', 'disable markdown rendering')
-    .option('    --no-illiterate', 'disable illiterate rendering')
-    .option('    --no-slim', 'disable slim rendering')
-    .option('-I, --no-icons', 'disable icons')
-    .option('-L, --no-logs', 'disable request logging')
-    .option('-D, --no-dirs', 'disable directory serving')
-    .option('-f, --favicon <path>', 'serve the given favicon')
-    .option('-C, --cors', 'allows cross origin access serving')
-    .option('    --compress', 'gzip or deflate the response')
-    .option('    --exec <cmd>', 'execute command on each request').parse process.argv
+  .usage('[options] [dir]')
+  .option('-F, --format <fmt>', 'specify the log format string', 'dev')
+  .option('-p, --port <port>', 'specify the port [8080]', Number, 8080)
+  .option('-H, --hidden', 'enable hidden file serving')
+  .option('-S, --no-stylus', 'disable stylus rendering')
+  .option('-J, --no-jade', 'disable jade rendering')
+  .option('    --no-less', 'disable less css rendering')
+  .option('    --cache <cache-folder>', 'store copy of each served file in `cache` folder', String)
+  .option('    --no-coffee', 'disable coffee script rendering')
+  .option('    --no-markdown', 'disable markdown rendering')
+  .option('    --no-illiterate', 'disable illiterate rendering')
+  .option('    --no-slim', 'disable slim rendering')
+  .option('-R  --livereload', 'enable livereload watching served directory (add `lr` to querystring of requested resource to inject client script)')
+  .option('-I, --no-icons', 'disable icons')
+  .option('-L, --no-logs', 'disable request logging')
+  .option('-D, --no-dirs', 'disable directory serving')
+  .option('-f, --favicon <path>', 'serve the given favicon')
+  .option('-C, --cors', 'allows cross origin access serving')
+  .option('    --compress', 'gzip or deflate the response')
+  .option('    --exec <cmd>', 'execute command on each request').parse process.argv
 
   # sourcepath
-  sourcepath = resolve(program.args.shift() or '.')
+  sourcepath = resolve(program.args[0] or '.')
 
   # setup the server
   server = express()
@@ -67,6 +78,14 @@ run = ->
   # if (program.logs) server.use(morgan(morgan.compile(program.format)));
   if program.logs
     server.use morgan('dev')
+
+  if program.livereload
+    server.use(tinylr.middleware({ app: server }))
+    # TODO: use https://www.npmjs.com/package/watchr
+    # TODO: send served filename, not changed filename to handle preprocessed files
+    fs.watch sourcepath, {recursive:true}, (e, filename)->
+      request "http://127.0.0.1:#{program.port}/changed?files="+filename, (error, response, body)->
+        console.log 'livereloaded due to change: ' + filename
 
   # slm template helpers
   slm.template.registerEmbeddedFunction 'markdown', marked
@@ -85,7 +104,7 @@ run = ->
     '<style type="text/css">' + stylus.render(str) + '</style>'
 
   # file types for plain serving and alter-ego extension rendering
-  types = 
+  types =
     coffee:
       ext: 'coffee'
       next: 'js'
@@ -137,7 +156,7 @@ run = ->
       process: (str, file) ->
         marked str
     stylus:
-      ext: 'styl'
+      exts: ['styl']
       next: 'css'
       mime: 'text/css'
       flag: program.stylus
@@ -154,6 +173,28 @@ run = ->
           css = compiled
         css
 
+  ## https://github.com/strongloop/express/issues/1765
+  # var handlers = [customMiddleware1, customMiddleware2];
+  #
+  # function mySuperMiddleware(req, res, next) {
+  #         function run(index) {
+  #             if (index < handlers.length) {
+  #                 handlers[index](req, res, function (err) {
+  #                     if (err) {
+  #                         return next(err);
+  #                     }
+  #                     index += 1;
+  #                     run(index);
+  #                 });
+  #             } else {
+  #                 next();
+  #             }
+  #         }
+  #         run(0);
+  # };
+  #
+  # app.use(mySuperMiddleware);
+
   setup = (type) ->
     tech = types[type]
     server.use (req, res, next) ->
@@ -168,10 +209,20 @@ run = ->
             return next(err)
           try
             str = tech.process(str, file)
+            if req.query.lr
+              lr_tag = """
+              <script src="/livereload.js?snipver=1"></script>
+              """
+              $ = cheerio.load str
+              if $('script').length
+                $('script').before lr_tag
+                str = $.html()
+              else
+                str = lr_tag + str
+            res.end str
             # custom function can use/discard args as needed
             res.setHeader 'Content-Type', tech.mime
             res.setHeader 'Content-Length', Buffer.byteLength(str)
-            res.end str
           catch err
             next err
       else
@@ -219,6 +270,7 @@ run = ->
     server.use compression()
 
   # static files
+  # TODO: use https://www.npmjs.com/package/serve-static
   server.use express.static(sourcepath, hidden: program.hidden)
   server.use express.static(__dirname + '/../lib/extra', hidden: program.hidden)
 
