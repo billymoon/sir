@@ -145,28 +145,28 @@ run = ->
   # file types for plain serving and alter-ego extension rendering
   types =
     coffee:
-      ext: 'coffee'
+      exts: ['coffee']
       next: 'js'
       mime: 'application/javascript'
       flag: program.coffee
       process: (str, file) ->
         coffee.compile str
     litcoffee:
-      ext: 'coffee.md'
+      exts: ['coffee.md']
       next: 'js'
       mime: 'application/javascript'
       flag: program.coffee
       process: (str, file) ->
         coffee.compile str, literate: true
     litjs:
-      ext: 'js.md'
+      exts: ['js.md']
       next: 'js'
       mime: 'application/javascript'
       flag: program.illiterate
       process: (str, file) ->
         illiterate str
     jade:
-      ext: 'jade'
+      exts: ['jade']
       next: 'html?'
       mime: 'text/html'
       flag: program.jade
@@ -174,21 +174,21 @@ run = ->
         fn = jade.compile(str, filename: file)
         fn()
     slim:
-      ext: 'slim'
+      exts: ['slim','slm']
       next: 'html?'
       mime: 'text/html'
       flag: program.slim
       process: (str, file) ->
         beautify.html slm.render(str), indent_size: 4
     markdown:
-      ext: 'md'
+      exts: ['md']
       next: 'html?'
       mime: 'text/html'
       flag: program.markdown
       process: (str, file) ->
         marked str
     litcoffeemd:
-      ext: 'coffee.md'
+      exts: ['coffee.md']
       next: 'html?'
       mime: 'text/html'
       flag: program.markdown
@@ -202,7 +202,7 @@ run = ->
       process: (str, file) ->
         stylus.render str
     less:
-      ext: 'less'
+      exts: ['less']
       next: 'css'
       mime: 'text/css'
       flag: program.less
@@ -241,35 +241,39 @@ run = ->
       if !url.parse(req.originalUrl).pathname.match(rex)
         return next()
       file = join(sourcepath, decodeURI(url.parse(req.url).pathname))
-      rend = file.replace(rex, '.' + tech.ext)
-      if fs.existsSync(rend)
-        fs.readFile rend, 'utf8', (err, str) ->
-          if err
-            return next(err)
-          try
-            str = tech.process(str, file)
-            if !!req.query.lr
-              lr_tag = """
-              <script src="/livereload.js?snipver=1"></script>
-              """
-              $ = cheerio.load str
-              if $('script').length
-                $('script').before lr_tag
-                str = $.html()
-              else
-                str = lr_tag + str
-            # custom function can use/discard args as needed
-            res.setHeader 'Content-Type', tech.mime
-            res.setHeader 'Content-Length', Buffer.byteLength(str)
-            res.end str
-          catch err
-            next err
-      else
+      match = false
+      for ext in tech.exts
+        rend = file.replace(rex, '.' + ext)
+        if fs.existsSync(rend)
+          match = true
+          fs.readFile rend, 'utf8', (err, str) ->
+            if err
+              return next(err)
+            try
+              str = tech.process(str, file)
+              if !!req.query.lr
+                lr_tag = """
+                <script src="/livereload.js?snipver=1"></script>
+                """
+                $ = cheerio.load str
+                if $('script').length
+                  $('script').before lr_tag
+                  str = $.html()
+                else
+                  str = lr_tag + str
+              # custom function can use/discard args as needed
+              res.setHeader 'Content-Type', tech.mime
+              res.setHeader 'Content-Length', Buffer.byteLength(str)
+              res.end str
+            catch err
+              next err
+      if !match
         # allow other handlers to have a bash at the same extension
         next()
 
+
     server.use (req, res, next) ->
-      rex = new RegExp('\\.' + tech.ext + '$')
+      rex = new RegExp('\\.(' + tech.exts.join('|') + ')$')
       if !req.url.match(rex)
         return next()
       file = join(sourcepath, decodeURI(url.parse(req.url).pathname))
