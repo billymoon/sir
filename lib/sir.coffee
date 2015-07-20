@@ -73,6 +73,11 @@ run = ->
   # setup the server
   server = express()
 
+  output = null
+  endStore = (res, out)->
+    output = out
+    res.end output
+
   # logger
   # TODO: accept log format
   # if (program.logs) server.use(morgan(morgan.compile(program.format)));
@@ -86,6 +91,40 @@ run = ->
     fs.watch sourcepath, {recursive:true}, (e, filename)->
       request "http://127.0.0.1:#{program.port}/changed?files="+filename, (error, response, body)->
         console.log 'livereloaded due to change: ' + filename
+
+  # http://stackoverflow.com/a/19215370/665261
+  server.use (req, res, next)->
+    oldWrite = res.write;
+    oldEnd = res.end;
+
+    chunks = [];
+
+    res.write = (chunk)->
+      chunks.push chunk
+      oldWrite.apply res, arguments
+
+    res.end = (chunk)->
+      if chunk then chunks.push chunk
+
+      body = Buffer.concat chunks
+
+      filepath = req.originalUrl
+      if program.cache && res.statusCode >= 200 && res.statusCode < 400
+        resolvedpath = path.resolve path.join program.cache, path.dirname filepath
+        filename = path.resolve path.join program.cache, filepath
+        if fs.existsSync(resolvedpath) && fs.lstatSync(resolvedpath).isFile()
+          fs.renameSync resolvedpath, resolvedpath + '.tmp'
+          mkdirp.sync resolvedpath
+          fs.renameSync resolvedpath + '.tmp', path.join resolvedpath, 'auto-index.html'
+        else if fs.existsSync(filename) && fs.lstatSync(filename).isDirectory()
+          filename = path.join filename, 'auto-index.html'
+        else
+          mkdirp.sync resolvedpath
+        fs.writeFileSync filename, body
+
+      oldEnd.apply res, arguments
+
+    next()
 
   # slm template helpers
   slm.template.registerEmbeddedFunction 'markdown', marked
@@ -209,7 +248,7 @@ run = ->
             return next(err)
           try
             str = tech.process(str, file)
-            if req.query.lr
+            if !!req.query.lr
               lr_tag = """
               <script src="/livereload.js?snipver=1"></script>
               """
@@ -219,10 +258,10 @@ run = ->
                 str = $.html()
               else
                 str = lr_tag + str
-            res.end str
             # custom function can use/discard args as needed
             res.setHeader 'Content-Type', tech.mime
             res.setHeader 'Content-Length', Buffer.byteLength(str)
+            res.end str
           catch err
             next err
       else
@@ -241,7 +280,7 @@ run = ->
           try
             res.setHeader 'Content-Type', 'text/plain'
             res.setHeader 'Content-Length', Buffer.byteLength(str)
-            res.end str
+            endStore res, str
           catch err
             next err
 
@@ -262,7 +301,7 @@ run = ->
       res.setHeader 'Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS'
       res.setHeader 'Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With, Accept, x-csrf-token, origin'
       if req.method == 'OPTIONS'
-        return res.end()
+        endStore res
       next()
 
   # compression
