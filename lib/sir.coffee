@@ -251,7 +251,7 @@ run = ->
               return next(err)
             try
               str = tech.process(str, file)
-              if !!req.query.lr
+              if req.query.lr?
                 lr_tag = """
                 <script src="/livereload.js?snipver=1"></script>
                 """
@@ -264,13 +264,12 @@ run = ->
               # custom function can use/discard args as needed
               res.setHeader 'Content-Type', tech.mime
               res.setHeader 'Content-Length', Buffer.byteLength(str)
-              res.end str
+              endStore res, str
             catch err
               next err
       if !match
         # allow other handlers to have a bash at the same extension
         next()
-
 
     server.use (req, res, next) ->
       rex = new RegExp('\\.(' + tech.exts.join('|') + ')$')
@@ -311,6 +310,51 @@ run = ->
   # compression
   if program.compress
     server.use compression()
+
+  serveStatic = require 'serve-static'
+  filepaths = program.args.map (item)-> return (item.match(/^(.+?):(.+?)$/) || [null,'',item]).slice 1,3
+  filepaths.forEach (filepath)->
+    server.use '/'+filepath[0], serveStatic filepath[1], hidden: program.hidden
+
+  server.use (req, res, next)->
+    # TODO: safe alternative to `req._parsedUrl`
+    if m = req._parsedUrl.pathname.match /^\/sir\/(.+)?$/
+      console.log m
+      slice = m[1] || '.'
+      match = null
+      filepaths.forEach (filepath)->
+        # TODO: better way to break early from loop if we have match
+        if !!match
+          return
+        derived = path.relative filepath[0], m[1] || filepath[0]
+        if !/^\.\.\//.test derived
+          target = path.join filepath[1], derived
+          if fs.existsSync(target) && fs.lstatSync(target).isDirectory()
+            match = target
+      if !!match
+        if req.query.dirlist == 'text'
+          res.setHeader 'Content-Type', 'text/plain'
+          res.end fs.readdirSync(match).join '\n'
+        if req.query.dirlist == 'json'
+          res.setHeader 'Content-Type', 'application/json'
+          res.end JSON.stringify fs.readdirSync match
+        else
+          res.setHeader 'Content-Type', 'text/html'
+          res.end "<ul><li><a href='/#{path.join('sir',slice,'..')}'>..</a></li>"+fs.readdirSync(match).map(
+              (item)->
+                #console.log fs.lstatSync(path.join(match,item))
+                if fs.lstatSync(path.join(match,item)).isDirectory()
+                  "<li><a href='/sir/#{path.join(slice,item)}'>#{item}</a></li>"
+                else
+                  "<li><a href='/#{path.join(slice,item)}'>: #{item}</a></li>"
+            ).join('')+'</ul>'
+    next()
+
+  #
+  # if program.dirs
+  #   server.use directory paths[0][1],
+  #     hidden: program.hidden
+  #     icons: program.icons
 
   # static files
   # TODO: use https://www.npmjs.com/package/serve-static
