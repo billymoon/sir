@@ -25,6 +25,7 @@ run = ->
   stylus = require 'stylus'
   jade = require 'jade'
   less = require 'less'
+  sass = require 'node-sass'
   slm = require 'slm'
   mustache = require 'mustache'
   _ = require 'lodash'
@@ -72,6 +73,12 @@ run = ->
       chain: 'css'
     stylus:
       process: (str)-> stylus.render str
+      chain: 'css'
+    scss:
+      process: (str)-> sass.renderSync(data: str).css
+      chain: 'css'
+    sass:
+      process: (str)-> sass.renderSync(data: str, indentedSyntax: true).css
       chain: 'css'
     coffee:
       process: (str)-> coffee.compile str
