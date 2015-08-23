@@ -124,28 +124,26 @@ run = ->
           m = req._parsedUrl.pathname.match new RegExp "^/?(.+)\\.#{handlers[item]?.chain}$"
           ## TODO: consolidate literate and regular types
           literate_path = "#{req._parsedUrl.pathname}.md".replace(/^\//,'')
-          if !!fallthrough && fs.existsSync path.resolve literate_path
+          compilable_path = !!m and "#{m[1]}.#{item}"
+          literate_compilable_path = !!m and "#{m[1]}.#{item}.md"
+          literate = null
+          raw = null
+          if !!fallthrough and (
+              (fs.existsSync(path.resolve(literate_path)) and literate = true and raw = true) or !!m and (
+                fs.existsSync(path.resolve(compilable_path)) or (
+                  fs.existsSync(path.resolve(literate_compilable_path)) and literate = true
+                )
+              )
+            )
             fallthrough = false
-            str = fs.readFileSync(path.resolve literate_path).toString 'UTF-8'
-            out = illiterate str
-            res.setHeader 'Content-Type', "text/#{item}; charset=utf-8"
-            res.setHeader 'Content-Length', out.length
-            res.end out
-          else if !!fallthrough &!!m && fs.existsSync path.resolve "#{m[1]}.#{item}"
-            fallthrough = false
-            str = fs.readFileSync(path.resolve "#{m[1]}.#{item}").toString 'UTF-8'
-            out = handlers[item].process str, path.resolve "#{m[1]}.#{item}"
-            res.setHeader 'Content-Type', "#{mimes[handlers[item]?.chain]}; charset=utf-8"
-            res.setHeader 'Content-Length', out.length
-            res.end out
-          else if !!fallthrough &!!m && fs.existsSync path.resolve "#{m[1]}.#{item}.md"
-            fallthrough = false
-            str = fs.readFileSync(path.resolve "#{m[1]}.#{item}.md").toString 'UTF-8'
-            str = illiterate str
-            out = handlers[item].process str, path.resolve "#{m[1]}.#{item}.md"
-            res.setHeader 'Content-Type', "#{mimes[handlers[item]?.chain]}; charset=utf-8"
-            res.setHeader 'Content-Length', out.length
-            res.end out
+            currentpath = if raw then literate_path else if literate then literate_compilable_path else compilable_path
+            str = fs.readFileSync(path.resolve currentpath).toString 'UTF-8'
+            if !!literate then str = illiterate str
+            if not raw then str = handlers[item].process str, path.resolve compilable_path
+            ## TODO: bug - `http://localhost:8080/demo/sample-literate.coffee` shows content-type `text/less`
+            res.setHeader 'Content-Type', if !!raw then "text/#{item}; charset=utf-8" else "#{mimes[handlers[item]?.chain]}; charset=utf-8"
+            res.setHeader 'Content-Length', str.length
+            res.end str
         next() if fallthrough
       server.use "/#{myurl}", express.static mypath, hidden:program.hidden
       server.use (req, res, next)->
