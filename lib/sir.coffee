@@ -1,20 +1,18 @@
 run = ->
 
-  # process.on 'uncaughtException', (err) ->
-  #   console.log err
-  #   if err.code == 'EADDRINUSE'
-  #     port = if program.port then 'port ' + program.port else 'the port'
-  #     console.error 'looks like ' + port + ' is already in use\ntry a different port with: --port <PORT>'
-  #   else
-  #     console.error err
-  #     # console.error err.syscall + ' ' + err.code
+  process.on 'uncaughtException', (err) ->
+    if err.code == 'EADDRINUSE'
+      port = if program.port then 'port ' + program.port else 'the port'
+      console.error 'Looks like ' + port + ' is already in use\nTry a different port with: --port <PORT>'
+    else
+      console.error err
 
   url = require 'url'
   fs = require 'fs'
-  path = require 'path' # resolve/join
+  path = require 'path'
   exec = require('child_process').exec
 
-  # mkdirp = require 'mkdirp'
+  mkdirp = require 'mkdirp'
   program = require 'commander'
   express = require 'express'
   serveIndex = require 'serve-index'
@@ -44,7 +42,7 @@ run = ->
   # .option('-s, --no-stylus', 'disable stylus rendering')
   # .option('-j, --no-jade', 'disable jade rendering')
   # .option('    --no-less', 'disable less css rendering')
-  # .option('    --cache <cache-folder>', 'store copy of each served file in `cache` folder', String)
+  .option('    --cache <cache-folder>', 'store copy of each served file in `cache` folder', String)
   # .option('    --no-coffee', 'disable coffee script rendering')
   # .option('    --no-markdown', 'disable markdown rendering')
   # .option('    --no-illiterate', 'disable illiterate rendering')
@@ -112,6 +110,40 @@ run = ->
 
   # setup the server
   server = express()
+
+  # http://stackoverflow.com/a/19215370/665261
+  server.use (req, res, next)->
+    oldWrite = res.write;
+    oldEnd = res.end;
+
+    chunks = [];
+
+    res.write = (chunk)->
+      chunks.push chunk
+      oldWrite.apply res, arguments
+
+    res.end = (chunk)->
+      if chunk then chunks.push chunk
+
+      body = Buffer.concat chunks
+
+      filepath = req.originalUrl
+      if program.cache && res.statusCode >= 200 && res.statusCode < 400
+        resolvedpath = path.resolve path.join program.cache, path.dirname filepath
+        filename = path.resolve path.join program.cache, filepath
+        if fs.existsSync(resolvedpath) && fs.lstatSync(resolvedpath).isFile()
+          fs.renameSync resolvedpath, resolvedpath + '.tmp'
+          mkdirp.sync resolvedpath
+          fs.renameSync resolvedpath + '.tmp', path.join resolvedpath, 'auto-index.html'
+        else if fs.existsSync(filename) && fs.lstatSync(filename).isDirectory()
+          filename = path.join filename, 'auto-index.html'
+        else
+          mkdirp.sync resolvedpath
+        fs.writeFileSync filename, body
+
+      oldEnd.apply res, arguments
+
+    next()
 
   sources = if program.args.length then program.args else ['.']
   served = {}
