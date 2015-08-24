@@ -143,11 +143,12 @@ run = ->
               )
             )
             fallthrough = false
-            currentpath = if raw then literate_path else if literate then literate_compilable_path else compilable_path
+            currentpath = if !!raw then literate_path else if literate then literate_compilable_path else compilable_path
             str = fs.readFileSync(path.resolve currentpath).toString 'UTF-8'
             if !!literate then str = illiterate str
-            if not raw then str = handlers[item].process str, path.resolve compilable_path
-            ## TODO: bug - `http://localhost:8080/demo/sample-literate.coffee` shows content-type `text/less`
+            if not raw then str = handlers[item].process str, path.resolve currentpath
+            ## TODO: bug - `demo/sample-literate.coffee` and `demo/literate-javascript.js.md` shows content-type `text/less`
+            # console.log raw, item, literate
             res.setHeader 'Content-Type', if !!raw then "text/#{item}; charset=utf-8" else "#{mimes[handlers[item]?.chain]}; charset=utf-8"
             res.setHeader 'Content-Length', str.length
             res.end str
