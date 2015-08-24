@@ -1,4 +1,5 @@
 <link rel='stylesheet' type='text/css' href='literate-sass.css' />
+<script src='./literate-javascript.js'></script>
 
 # Literate javascript
 
@@ -8,8 +9,6 @@ This is both markdown, and javascript in one file!
       return Math.round(Math.random() * x);
     }
 
-    console.log(rnd(10));
-
 When rendered as markdown, it provides documentation. When rendered as javascript, it becomes executable code :)
 
-    alert('Super, check out the console...');
+    console.log(rnd(10));

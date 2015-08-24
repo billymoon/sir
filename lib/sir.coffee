@@ -16,7 +16,7 @@ run = ->
   program = require 'commander'
   express = require 'express'
   serveIndex = require 'serve-index'
-  # compression = require 'compression'
+  compression = require 'compression'
   # morgan = require 'morgan'
   coffee = require 'coffee-script'
   marked = require 'marked'
@@ -53,7 +53,7 @@ run = ->
   # .option('-d, --no-dirs', 'disable directory serving')
   # .option('-f, --favicon <path>', 'serve the given favicon')
   # .option('-c, --cors', 'allows cross origin access serving')
-  # .option('    --compress', 'gzip or deflate the response')
+  .option('    --compress', 'gzip or deflate the response')
   # .option('    --exec <cmd>', 'execute command on each request')
   .parse process.argv
 
@@ -110,6 +110,10 @@ run = ->
 
   # setup the server
   server = express()
+
+  # compression
+  if program.compress
+    server.use compression threshold: 0
 
   # http://stackoverflow.com/a/19215370/665261
   server.use (req, res, next)->
@@ -179,12 +183,13 @@ run = ->
             str = fs.readFileSync(path.resolve currentpath).toString 'UTF-8'
             if !!literate then str = illiterate str
             if not raw then str = handlers[item].process str, path.resolve currentpath
+            ## TODO: bug - does not render from root directory
             ## TODO: bug - `demo/sample-literate.coffee` and `demo/literate-javascript.js.md` shows content-type `text/less`
             # console.log raw, item, literate
             res.setHeader 'Content-Type', if !!raw then "text/#{item}; charset=utf-8" else "#{mimes[handlers[item]?.chain]}; charset=utf-8"
             res.setHeader 'Content-Length', str.length
             res.end str
-        next() if fallthrough
+        next()
       server.use "/#{myurl}", express.static mypath, hidden:program.hidden
       server.use (req, res, next)->
         if req.query.format == 'json'
@@ -192,6 +197,7 @@ run = ->
         else if req.query.format == 'text'
           req.headers.accept = 'text/plain'
         next()
+
       server.use "/#{myurl}", serveIndex mypath,
         'icons': false
         template: (locals, callback)->
