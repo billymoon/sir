@@ -39,14 +39,14 @@ run = ->
   .option('-h, --hidden', 'enable hidden file serving')
   .option('    --cache <cache-folder>', 'store copy of each served file in `cache` folder', String)
   .option('    --no-livereload', 'disable livereload watching served directory (add `lr` to querystring of requested resource to inject client script)')
-  # .option('-i, --no-icons', 'disable icons')
   .option('    --no-logs', 'disable request logging')
   .option('-f, --format <fmt>', 'specify the log format string (npmjs.com/package/morgan)', 'dev')
-  # .option('-d, --no-dirs', 'disable directory serving')
-  # .option('-f, --favicon <path>', 'serve the given favicon')
-  # .option('-c, --cors', 'allows cross origin access serving')
   .option('    --compress', 'gzip or deflate the response')
   .option('    --exec <cmd>', 'execute command on each request')
+  .option('    --no-cors', 'disable cross origin access serving')
+  # .option('-i, --no-icons', 'disable icons')
+  # .option('-d, --no-dirs', 'disable directory serving')
+  # .option('-f, --favicon <path>', 'serve the given favicon')
   .parse process.argv
 
   mimes =
@@ -123,6 +123,16 @@ run = ->
   # compression
   if program.compress
     server.use compression threshold: 0
+
+  # CORS access for files
+  if program.cors
+    server.use (req, res, next) ->
+      res.setHeader 'Access-Control-Allow-Origin', '*'
+      res.setHeader 'Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS'
+      res.setHeader 'Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With, Accept, x-csrf-token, origin'
+      if req.method == 'OPTIONS'
+        endStore res
+      next()
 
   # livereload (add ?lr to url to activate - watches served paths)
   if program.livereload
