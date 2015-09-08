@@ -34,7 +34,7 @@ run = ->
   request = require('request')
 
   program.version(require('../package.json').version)
-  .usage('[options] [dir]')
+  .usage('[options] <dir>')
   .option('-p, --port <port>', 'specify the port [8080]', Number, 8080)
   .option('-h, --hidden', 'enable hidden file serving')
   .option('    --cache <cache-folder>', 'store copy of each served file in `cache` folder', String)
@@ -44,11 +44,17 @@ run = ->
   .option('    --compress', 'gzip or deflate the response')
   .option('    --exec <cmd>', 'execute command on each request')
   .option('    --no-cors', 'disable cross origin access serving')
+  .option('    --vendor-path', 'display the path to the vendor libraries and exit')
+  ## TODO: --fetch lib,lib,lib
   ## TODO: consider re-implementing these features...
   # .option('-i, --no-icons', 'disable icons')
   # .option('-d, --no-dirs', 'disable directory serving')
   # .option('-f, --favicon <path>', 'serve the given favicon')
   .parse process.argv
+
+  if program.vendorPath
+    console.log path.resolve path.join __dirname, '..', 'lib/extra/vendor'
+    process.exit()
 
   mimes =
     html: 'text/html'
