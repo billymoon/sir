@@ -32,7 +32,6 @@ run = ->
   cheerio = require('cheerio')
   tinylr = require('tiny-lr')
   request = require('request')
-  # onFinished = require('on-finished')
 
   program.version(require('../package.json').version)
   .usage('[options] [dir]')
@@ -47,7 +46,7 @@ run = ->
   # .option('-f, --favicon <path>', 'serve the given favicon')
   # .option('-c, --cors', 'allows cross origin access serving')
   .option('    --compress', 'gzip or deflate the response')
-  # .option('    --exec <cmd>', 'execute command on each request')
+  .option('    --exec <cmd>', 'execute command on each request')
   .parse process.argv
 
   mimes =
@@ -115,6 +114,11 @@ run = ->
 
   # setup the server
   server = express()
+
+  # exec command
+  if program.exec
+    server.use (req, res, next) ->
+      exec program.exec, next
 
   # compression
   if program.compress
