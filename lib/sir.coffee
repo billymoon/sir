@@ -44,6 +44,7 @@ run = ->
   .option('    --compress', 'gzip or deflate the response')
   .option('    --exec <cmd>', 'execute command on each request')
   .option('    --no-cors', 'disable cross origin access serving')
+  ## TODO: consider re-implementing these features...
   # .option('-i, --no-icons', 'disable icons')
   # .option('-d, --no-dirs', 'disable directory serving')
   # .option('-f, --favicon <path>', 'serve the given favicon')
@@ -227,9 +228,11 @@ run = ->
                 str = $.html()
               else
                 str = lr_tag + str
-
-            ## TODO: bug - `demo/sample-literate.coffee` and `demo/literate-javascript.js.md` shows content-type `text/less`
-            res.setHeader 'Content-Type', if !!raw then "text/#{item}; charset=utf-8" else "#{mimes[handlers[item]?.chain]}; charset=utf-8"
+            if !!literate and !!raw
+              part = path.extname(replaced_path).replace(/^\./, '')
+              ## TODO: perhaps use filetype for mime instead of plain ... #{part or 'plain'}"
+              literate_mime = if mimes[part] then mimes[part] else "text/plain"
+            res.setHeader 'Content-Type', if !!literate_mime then "#{literate_mime}; charset=utf-8" else if !!raw then "text/#{item}; charset=utf-8" else "#{mimes[handlers[item]?.chain]}; charset=utf-8"
             res.setHeader 'Content-Length', str.length
             res.end str
         next() if fallthrough
