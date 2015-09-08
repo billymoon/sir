@@ -61,13 +61,12 @@ run = ->
     html: 'text/html'
     css: 'text/css'
     js: 'application/javascript'
+    xml: 'text/xml'
+    xsl: 'text/xsl'
 
   handlers =
     less:
-      process: (str) ->
-        css = null
-        less.render str, (e, compiled) -> css = compiled
-        css
+      process: (str)-> css=null; less.render(str, (e, compiled)-> css=compiled); css
       chain: 'css'
     stylus:
       process: (str)-> stylus.render str
@@ -79,7 +78,7 @@ run = ->
       process: (str)-> sass.renderSync(data: str, indentedSyntax: true).css
       chain: 'css'
     coffee:
-      process: (str)-> coffee.compile str
+      process: (str)-> coffee.compile str, bare:true
       chain: 'js'
     markdown:
       process: (str)-> beautify.html marked str
@@ -90,6 +89,13 @@ run = ->
     slim:
       process: (str) -> beautify.html slm.render(str), indent_size: 4
       chain: 'html'
+    # TODO: better way to handle xml and xsl in slim - perhaps double barrel name?
+    xmls:
+      process: (str) -> beautify.html slm.render(str), indent_size: 4
+      chain: 'xml'
+    xslm:
+      process: (str) -> beautify.html slm.render(str), indent_size: 4
+      chain: 'xsl'
 
   handlers.md = handlers.markdown
   handlers.slm = handlers.slim
@@ -105,6 +111,12 @@ run = ->
 
   slm.template.registerEmbeddedFunction 'stylus', (str) ->
     '<style type="text/css">' + handlers.stylus.process(str) + '</style>'
+
+  slm.template.registerEmbeddedFunction 'scss', (str) ->
+    '<style type="text/css">' + handlers.scss.process(str) + '</style>'
+
+  slm.template.registerEmbeddedFunction 'sass', (str) ->
+    '<style type="text/css">' + handlers.sass.process(str) + '</style>'
 
   sourcepath = path.resolve program.args[0] or '.'
 
@@ -155,8 +167,8 @@ run = ->
     mypaths = source.split ':'
     myurl = if mypaths.length > 1 then mypaths.shift() else ''
     for mypath in mypaths
-      served[myurl] = served[myurl] || {}
-      served[myurl].paths = (served[myurl].paths || []).concat mypath
+      served[myurl] = served[myurl] or {}
+      served[myurl].paths = (served[myurl].paths or []).concat mypath
       served[myurl].files = (served[myurl].files or []).concat fs.readdirSync path.resolve mypath
   for myurl, items of served
     for mypath in items.paths
@@ -164,32 +176,31 @@ run = ->
         fallthrough = true
         _.each _.keys(handlers), (item, index)->
           ## TODO: safe alternative to `req._parsedUrl`
-          m = req._parsedUrl.pathname.match new RegExp "^/?(.+)\\.#{handlers[item]?.chain}$"
-          ## TODO: consolidate literate and regular types
-          literate_path = "#{req._parsedUrl.pathname}.md".replace(/^\//,'')
+          replaced_path = req._parsedUrl.pathname.replace new RegExp("^\/?#{myurl}"), ""
+          m = replaced_path.match new RegExp "^/?(.+)\\.#{handlers[item]?.chain}$"
+          literate_path = "#{replaced_path}.md".replace(/^\//,'')
           compilable_path = !!m and "#{m[1]}.#{item}"
           literate_compilable_path = !!m and "#{m[1]}.#{item}.md"
           literate = null
           raw = null
           if !!fallthrough and (
-              (fs.existsSync(path.resolve(literate_path)) and literate = true and raw = true) or !!m and (
-                fs.existsSync(path.resolve(compilable_path)) or (
-                  fs.existsSync(path.resolve(literate_compilable_path)) and literate = true
+              (fs.existsSync(path.resolve(path.join(mypath,literate_path))) and literate = true and raw = true) or !!m and (
+                fs.existsSync(path.resolve(path.join(mypath,compilable_path))) or (
+                  fs.existsSync(path.resolve(path.join(mypath,literate_compilable_path))) and literate = true
                 )
               )
             )
             fallthrough = false
             currentpath = if !!raw then literate_path else if literate then literate_compilable_path else compilable_path
+            currentpath = path.join mypath, currentpath
             str = fs.readFileSync(path.resolve currentpath).toString 'UTF-8'
             if !!literate then str = illiterate str
             if not raw then str = handlers[item].process str, path.resolve currentpath
-            ## TODO: bug - does not render from root directory
             ## TODO: bug - `demo/sample-literate.coffee` and `demo/literate-javascript.js.md` shows content-type `text/less`
-            # console.log raw, item, literate
             res.setHeader 'Content-Type', if !!raw then "text/#{item}; charset=utf-8" else "#{mimes[handlers[item]?.chain]}; charset=utf-8"
             res.setHeader 'Content-Length', str.length
             res.end str
-        next()
+        next() if fallthrough
       server.use "/#{myurl}", express.static mypath, hidden:program.hidden
       server.use (req, res, next)->
         if req.query.format == 'json'
