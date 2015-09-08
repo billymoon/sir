@@ -1,89 +1,141 @@
 run = ->
+
   process.on 'uncaughtException', (err) ->
-    console.log err
     if err.code == 'EADDRINUSE'
       port = if program.port then 'port ' + program.port else 'the port'
-      console.error 'looks like ' + port + ' is already in use\ntry a different port with: --port <PORT>'
+      console.error 'Looks like ' + port + ' is already in use\nTry a different port with: --port <PORT>'
     else
-      console.error err.syscall + ' ' + err.code
+      console.error err
 
-  ###*
-  # Module dependencies.
-  ###
-
-  url = require('url')
-  fs = require('fs')
-  join = require('path').join
-  resolve = require('path').resolve
-  path = require('path')
+  url = require 'url'
+  fs = require 'fs'
+  path = require 'path'
   exec = require('child_process').exec
 
-  mkdirp = require('mkdirp')
-
-  program = require('commander')
-
-  express = require('express')
-  compression = require('compression')
-  morgan = require('morgan')
-
-  # TODO: use https://www.npmjs.com/package/serve-index
-  directory = require('../lib/directory/directory.js')
-
-  coffee = require('coffee-script')
-  marked = require('marked')
-  stylus = require('stylus')
-  jade = require('jade')
-  less = require('less')
-  slm = require('slm')
-
-  illiterate = require('illiterate')
-  beautify = require('js-beautify')
+  mkdirp = require 'mkdirp'
+  program = require 'commander'
+  express = require 'express'
+  serveIndex = require 'serve-index'
+  compression = require 'compression'
+  morgan = require 'morgan'
+  coffee = require 'coffee-script'
+  marked = require 'marked'
+  stylus = require 'stylus'
+  jade = require 'jade'
+  less = require 'less'
+  sass = require 'node-sass'
+  slm = require 'slm'
+  mustache = require 'mustache'
+  _ = require 'lodash'
+  illiterate = require 'illiterate'
+  beautify = require 'js-beautify'
   cheerio = require('cheerio')
   tinylr = require('tiny-lr')
   request = require('request')
 
-  onFinished = require('on-finished')
-
-  # CLI
   program.version(require('../package.json').version)
   .usage('[options] [dir]')
-  .option('-F, --format <fmt>', 'specify the log format string', 'dev')
   .option('-p, --port <port>', 'specify the port [8080]', Number, 8080)
-  .option('-H, --hidden', 'enable hidden file serving')
-  .option('-S, --no-stylus', 'disable stylus rendering')
-  .option('-J, --no-jade', 'disable jade rendering')
-  .option('    --no-less', 'disable less css rendering')
+  .option('-h, --hidden', 'enable hidden file serving')
   .option('    --cache <cache-folder>', 'store copy of each served file in `cache` folder', String)
-  .option('    --no-coffee', 'disable coffee script rendering')
-  .option('    --no-markdown', 'disable markdown rendering')
-  .option('    --no-illiterate', 'disable illiterate rendering')
-  .option('    --no-slim', 'disable slim rendering')
-  .option('-R  --livereload', 'enable livereload watching served directory (add `lr` to querystring of requested resource to inject client script)')
-  .option('-I, --no-icons', 'disable icons')
-  .option('-L, --no-logs', 'disable request logging')
-  .option('-D, --no-dirs', 'disable directory serving')
-  .option('-f, --favicon <path>', 'serve the given favicon')
-  .option('-C, --cors', 'allows cross origin access serving')
+  .option('    --no-livereload', 'disable livereload watching served directory (add `lr` to querystring of requested resource to inject client script)')
+  .option('    --no-logs', 'disable request logging')
+  .option('-f, --format <fmt>', 'specify the log format string (npmjs.com/package/morgan)', 'dev')
   .option('    --compress', 'gzip or deflate the response')
-  .option('    --exec <cmd>', 'execute command on each request').parse process.argv
+  .option('    --exec <cmd>', 'execute command on each request')
+  .option('    --no-cors', 'disable cross origin access serving')
+  ## TODO: consider re-implementing these features...
+  # .option('-i, --no-icons', 'disable icons')
+  # .option('-d, --no-dirs', 'disable directory serving')
+  # .option('-f, --favicon <path>', 'serve the given favicon')
+  .parse process.argv
 
-  # sourcepath
-  sourcepath = resolve(program.args[0] or '.')
+  mimes =
+    html: 'text/html'
+    css: 'text/css'
+    js: 'application/javascript'
+    xml: 'text/xml'
+    xsl: 'text/xsl'
+
+  handlers =
+    less:
+      process: (str)-> css=null; less.render(str, (e, compiled)-> css=compiled); css
+      chain: 'css'
+    stylus:
+      process: (str)-> stylus.render str
+      chain: 'css'
+    scss:
+      process: (str)-> sass.renderSync(data: str).css
+      chain: 'css'
+    sass:
+      process: (str)-> sass.renderSync(data: str, indentedSyntax: true).css
+      chain: 'css'
+    coffee:
+      process: (str)-> coffee.compile str, bare:true
+      chain: 'js'
+    markdown:
+      process: (str)-> beautify.html marked str
+      chain: 'html'
+    jade:
+      process: (str, file) -> beautify.html jade.compile(str, filename: file)()
+      chain: 'html'
+    slim:
+      process: (str) -> beautify.html slm.render(str), indent_size: 4
+      chain: 'html'
+    # TODO: better way to handle xml and xsl in slim - perhaps double barrel name?
+    xmls:
+      process: (str) -> beautify.html slm.render(str), indent_size: 4
+      chain: 'xml'
+    xslm:
+      process: (str) -> beautify.html slm.render(str), indent_size: 4
+      chain: 'xsl'
+
+  handlers.md = handlers.markdown
+  handlers.slm = handlers.slim
+  handlers.styl = handlers.stylus
+
+  slm.template.registerEmbeddedFunction 'markdown', handlers.markdown.process
+
+  slm.template.registerEmbeddedFunction 'coffee', (str) ->
+    '<script>' + handlers.coffee.process(str) + '</script>'
+
+  slm.template.registerEmbeddedFunction 'less', (str) ->
+    '<style type="text/css">' + handlers.less.process(str) + '</style>'
+
+  slm.template.registerEmbeddedFunction 'stylus', (str) ->
+    '<style type="text/css">' + handlers.stylus.process(str) + '</style>'
+
+  slm.template.registerEmbeddedFunction 'scss', (str) ->
+    '<style type="text/css">' + handlers.scss.process(str) + '</style>'
+
+  slm.template.registerEmbeddedFunction 'sass', (str) ->
+    '<style type="text/css">' + handlers.sass.process(str) + '</style>'
+
+  sourcepath = path.resolve program.args[0] or '.'
 
   # setup the server
   server = express()
 
-  output = null
-  endStore = (res, out)->
-    output = out
-    res.end output
+  # exec command
+  if program.exec
+    server.use (req, res, next) ->
+      exec program.exec, next
 
-  # logger
-  # TODO: accept log format
-  # if (program.logs) server.use(morgan(morgan.compile(program.format)));
-  if program.logs
-    server.use morgan('dev')
+  # compression
+  if program.compress
+    server.use compression threshold: 0
 
+  # CORS access for files
+  if program.cors
+    server.use (req, res, next) ->
+      res.setHeader 'Access-Control-Allow-Origin', '*'
+      res.setHeader 'Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS'
+      res.setHeader 'Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With, Accept, x-csrf-token, origin'
+      if req.method == 'OPTIONS'
+        endStore res
+      next()
+
+  # livereload (add ?lr to url to activate - watches served paths)
   if program.livereload
     server.use(tinylr.middleware({ app: server }))
     # TODO: use https://www.npmjs.com/package/watchr
@@ -91,6 +143,10 @@ run = ->
     fs.watch sourcepath, {recursive:true}, (e, filename)->
       request "http://127.0.0.1:#{program.port}/changed?files="+filename, (error, response, body)->
         console.log 'livereloaded due to change: ' + filename
+
+  # request logging
+  if program.logs
+    server.use morgan program.format
 
   # http://stackoverflow.com/a/19215370/665261
   server.use (req, res, next)->
@@ -126,252 +182,92 @@ run = ->
 
     next()
 
-  # slm template helpers
-  slm.template.registerEmbeddedFunction 'markdown', marked
-
-  slm.template.registerEmbeddedFunction 'coffee', (str) ->
-    '<script>' + coffee.compile(str) + '</script>'
-
-  slm.template.registerEmbeddedFunction 'less', (str) ->
-    css = undefined
-    less.render str, (e, compiled) ->
-      css = compiled
-      return
-    '<style type="text/css">' + css + '</style>'
-
-  slm.template.registerEmbeddedFunction 'stylus', (str) ->
-    '<style type="text/css">' + stylus.render(str) + '</style>'
-
-  # file types for plain serving and alter-ego extension rendering
-  types =
-    coffee:
-      exts: ['coffee']
-      next: 'js'
-      mime: 'application/javascript'
-      flag: program.coffee
-      process: (str, file) ->
-        coffee.compile str
-    litcoffee:
-      exts: ['coffee.md']
-      next: 'js'
-      mime: 'application/javascript'
-      flag: program.coffee
-      process: (str, file) ->
-        coffee.compile str, literate: true
-    litjs:
-      exts: ['js.md']
-      next: 'js'
-      mime: 'application/javascript'
-      flag: program.illiterate
-      process: (str, file) ->
-        illiterate str
-    jade:
-      exts: ['jade']
-      next: 'html?'
-      mime: 'text/html'
-      flag: program.jade
-      process: (str, file) ->
-        fn = jade.compile(str, filename: file)
-        fn()
-    slim:
-      exts: ['slim','slm']
-      next: 'html?'
-      mime: 'text/html'
-      flag: program.slim
-      process: (str, file) ->
-        beautify.html slm.render(str), indent_size: 4
-    markdown:
-      exts: ['md']
-      next: 'html?'
-      mime: 'text/html'
-      flag: program.markdown
-      process: (str, file) ->
-        marked str
-    litcoffeemd:
-      exts: ['coffee.md']
-      next: 'html?'
-      mime: 'text/html'
-      flag: program.markdown
-      process: (str, file) ->
-        marked str
-    stylus:
-      exts: ['styl']
-      next: 'css'
-      mime: 'text/css'
-      flag: program.stylus
-      process: (str, file) ->
-        stylus.render str
-    less:
-      exts: ['less']
-      next: 'css'
-      mime: 'text/css'
-      flag: program.less
-      process: (str, file) ->
-        css = undefined
-        less.render str, (e, compiled) ->
-          css = compiled
-        css
-
-  ## https://github.com/strongloop/express/issues/1765
-  # var handlers = [customMiddleware1, customMiddleware2];
-  #
-  # function mySuperMiddleware(req, res, next) {
-  #         function run(index) {
-  #             if (index < handlers.length) {
-  #                 handlers[index](req, res, function (err) {
-  #                     if (err) {
-  #                         return next(err);
-  #                     }
-  #                     index += 1;
-  #                     run(index);
-  #                 });
-  #             } else {
-  #                 next();
-  #             }
-  #         }
-  #         run(0);
-  # };
-  #
-  # app.use(mySuperMiddleware);
-
-  setup = (type) ->
-    tech = types[type]
-    server.use (req, res, next) ->
-      rex = new RegExp('\\.' + tech.next + '$')
-      if !url.parse(req.originalUrl).pathname.match(rex)
-        return next()
-      file = join(sourcepath, decodeURI(url.parse(req.url).pathname))
-      match = false
-      for ext in tech.exts
-        rend = file.replace(rex, '.' + ext)
-        if fs.existsSync(rend)
-          match = true
-          fs.readFile rend, 'utf8', (err, str) ->
-            if err
-              return next(err)
-            try
-              str = tech.process(str, file)
-              if req.query.lr?
-                lr_tag = """
-                <script src="/livereload.js?snipver=1"></script>
-                """
-                $ = cheerio.load str
-                if $('script').length
-                  $('script').before lr_tag
-                  str = $.html()
-                else
-                  str = lr_tag + str
-              # custom function can use/discard args as needed
-              res.setHeader 'Content-Type', tech.mime
-              res.setHeader 'Content-Length', Buffer.byteLength(str)
-              endStore res, str
-            catch err
-              next err
-      if !match
-        # allow other handlers to have a bash at the same extension
+  sources = if program.args.length then program.args else ['.']
+  served = {}
+  for source in sources
+    mypaths = source.split ':'
+    myurl = if mypaths.length > 1 then mypaths.shift() else ''
+    for mypath in mypaths
+      served[myurl] = served[myurl] or {}
+      served[myurl].paths = (served[myurl].paths or []).concat mypath
+      served[myurl].files = (served[myurl].files or []).concat fs.readdirSync path.resolve mypath
+  for myurl, items of served
+    for mypath in items.paths
+      server.use (req, res, next)->
+        fallthrough = true
+        _.each _.keys(handlers), (item, index)->
+          ## TODO: safe alternative to `req._parsedUrl`
+          replaced_path = req._parsedUrl.pathname.replace new RegExp("^\/?#{myurl}"), ""
+          m = replaced_path.match new RegExp "^/?(.+)\\.#{handlers[item]?.chain}$"
+          literate_path = "#{replaced_path}.md".replace(/^\//,'')
+          compilable_path = !!m and "#{m[1]}.#{item}"
+          literate_compilable_path = !!m and "#{m[1]}.#{item}.md"
+          literate = null
+          raw = null
+          if !!fallthrough and (
+              (fs.existsSync(path.resolve(path.join(mypath,literate_path))) and literate = true and raw = true) or !!m and (
+                fs.existsSync(path.resolve(path.join(mypath,compilable_path))) or (
+                  fs.existsSync(path.resolve(path.join(mypath,literate_compilable_path))) and literate = true
+                )
+              )
+            )
+            fallthrough = false
+            currentpath = if !!raw then literate_path else if literate then literate_compilable_path else compilable_path
+            currentpath = path.join mypath, currentpath
+            str = fs.readFileSync(path.resolve currentpath).toString 'UTF-8'
+            if !!literate then str = illiterate str
+            if not raw then str = handlers[item].process str, path.resolve currentpath
+            ## process lr to add livereload script to page
+            if program.livereload and req.query.lr?
+              lr_tag = """
+              <script src="/livereload.js?snipver=1"></script>
+              """
+              $ = cheerio.load str
+              if $('script').length
+                $('script').before lr_tag
+                str = $.html()
+              else
+                str = lr_tag + str
+            if !!literate and !!raw
+              part = path.extname(replaced_path).replace(/^\./, '')
+              ## TODO: perhaps use filetype for mime instead of plain ... #{part or 'plain'}"
+              literate_mime = if mimes[part] then mimes[part] else "text/plain"
+            res.setHeader 'Content-Type', if !!literate_mime then "#{literate_mime}; charset=utf-8" else if !!raw then "text/#{item}; charset=utf-8" else "#{mimes[handlers[item]?.chain]}; charset=utf-8"
+            res.setHeader 'Content-Length', str.length
+            res.end str
+        next() if fallthrough
+      server.use "/#{myurl}", express.static mypath, hidden:program.hidden
+      server.use (req, res, next)->
+        if req.query.format == 'json'
+          req.headers.accept = 'application/json'
+        else if req.query.format == 'text'
+          req.headers.accept = 'text/plain'
         next()
 
-    server.use (req, res, next) ->
-      rex = new RegExp('\\.(' + tech.exts.join('|') + ')$')
-      if !req.url.match(rex)
-        return next()
-      file = join(sourcepath, decodeURI(url.parse(req.url).pathname))
-      if fs.existsSync(file)
-        fs.readFile file, 'utf8', (err, str) ->
-          if err
-            return next(err)
-          try
-            res.setHeader 'Content-Type', 'text/plain'
-            res.setHeader 'Content-Length', Buffer.byteLength(str)
-            endStore res, str
-          catch err
-            next err
-
-  # exec command
-  if program.exec
-    server.use (req, res, next) ->
-      exec program.exec, next
-
-  # do setup for each defined renderable extension
-  for type of types
-    if types[type].flag
-      setup type
-
-  # CORS access for files
-  if program.cors
-    server.use (req, res, next) ->
-      res.setHeader 'Access-Control-Allow-Origin', '*'
-      res.setHeader 'Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS'
-      res.setHeader 'Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With, Accept, x-csrf-token, origin'
-      if req.method == 'OPTIONS'
-        endStore res
-      next()
-
-  # compression
-  if program.compress
-    server.use compression()
-
-  serveStatic = require 'serve-static'
-  filepaths = program.args.map (item)-> return (item.match(/^(.+?):(.+?)$/) || [null,'',item]).slice 1,3
-  filepaths.forEach (filepath)->
-    server.use '/'+filepath[0], serveStatic filepath[1], hidden: program.hidden
-
-  server.use (req, res, next)->
-    # TODO: safe alternative to `req._parsedUrl`
-    if m = req._parsedUrl.pathname.match /^\/sir\/(.+)?$/
-      console.log m
-      slice = m[1] || '.'
-      match = null
-      filepaths.forEach (filepath)->
-        # TODO: better way to break early from loop if we have match
-        if !!match
-          return
-        derived = path.relative filepath[0], m[1] || filepath[0]
-        if !/^\.\.\//.test derived
-          target = path.join filepath[1], derived
-          if fs.existsSync(target) && fs.lstatSync(target).isDirectory()
-            match = target
-      if !!match
-        if req.query.dirlist == 'text'
-          res.setHeader 'Content-Type', 'text/plain'
-          res.end fs.readdirSync(match).join '\n'
-        if req.query.dirlist == 'json'
-          res.setHeader 'Content-Type', 'application/json'
-          res.end JSON.stringify fs.readdirSync match
-        else
-          res.setHeader 'Content-Type', 'text/html'
-          res.end "<ul><li><a href='/#{path.join('sir',slice,'..')}'>..</a></li>"+fs.readdirSync(match).map(
-              (item)->
-                #console.log fs.lstatSync(path.join(match,item))
-                if fs.lstatSync(path.join(match,item)).isDirectory()
-                  "<li><a href='/sir/#{path.join(slice,item)}'>#{item}</a></li>"
-                else
-                  "<li><a href='/#{path.join(slice,item)}'>: #{item}</a></li>"
-            ).join('')+'</ul>'
-    next()
-
-  #
-  # if program.dirs
-  #   server.use directory paths[0][1],
-  #     hidden: program.hidden
-  #     icons: program.icons
-
-  # static files
-  # TODO: use https://www.npmjs.com/package/serve-static
-  server.use express.static(sourcepath, hidden: program.hidden)
-  server.use express.static(__dirname + '/../lib/extra', hidden: program.hidden)
-
-  # directory serving
-  if program.dirs
-    server.use directory(sourcepath,
-      hidden: program.hidden
-      icons: program.icons)
-    server.use directory(__dirname + '/../lib/extra',
-      hidden: program.hidden
-      icons: program.icons)
+      server.use "/#{myurl}", serveIndex mypath,
+        'icons': false
+        template: (locals, callback)->
+          files = []
+          dirs = []
+          ## TODO: use combined file list, not just one folder
+          # filelist = items.files.map (file)-> name: file
+          # console.log served[myurl]
+          _.each locals.fileList, (file, i)->
+            fileobject = a:file.name, href:locals.directory.replace(/\/$/,'')+'/'+file.name
+            if file.name.match /\./ then files.push fileobject else dirs.push fileobject
+          callback 0, mustache.render """
+          <ul>
+            {{#dirs}}
+            <li><a href="{{href}}">{{a}}</a></li>
+            {{/dirs}}
+            {{#files}}
+            <li><a href="{{href}}">{{a}}</a></li>
+            {{/files}}
+          </ul>
+          """, dirs: dirs, files: files
 
   # start the server
   server.listen program.port, ->
-    console.log 'serving %s on port %d', sourcepath, program.port
+    console.log 'serving %s on port %d', sourcepath, program.port  
 
 module.exports = run: run
