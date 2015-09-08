@@ -29,9 +29,9 @@ run = ->
   _ = require 'lodash'
   illiterate = require 'illiterate'
   beautify = require 'js-beautify'
-  # cheerio = require('cheerio')
-  # tinylr = require('tiny-lr')
-  # request = require('request')
+  cheerio = require('cheerio')
+  tinylr = require('tiny-lr')
+  request = require('request')
   # onFinished = require('on-finished')
 
   program.version(require('../package.json').version)
@@ -47,7 +47,7 @@ run = ->
   # .option('    --no-markdown', 'disable markdown rendering')
   # .option('    --no-illiterate', 'disable illiterate rendering')
   # .option('    --no-slim', 'disable slim rendering')
-  # .option('-r  --livereload', 'enable livereload watching served directory (add `lr` to querystring of requested resource to inject client script)')
+  .option('    --no-livereload', 'disable livereload watching served directory (add `lr` to querystring of requested resource to inject client script)')
   # .option('-i, --no-icons', 'disable icons')
   # .option('-l, --no-logs', 'disable request logging')
   # .option('-d, --no-dirs', 'disable directory serving')
@@ -127,6 +127,15 @@ run = ->
   if program.compress
     server.use compression threshold: 0
 
+  # livereload (add ?lr to url to activate - watches served paths)
+  if program.livereload
+    server.use(tinylr.middleware({ app: server }))
+    # TODO: use https://www.npmjs.com/package/watchr
+    # TODO: send served filename, not changed filename to handle preprocessed files
+    fs.watch sourcepath, {recursive:true}, (e, filename)->
+      request "http://127.0.0.1:#{program.port}/changed?files="+filename, (error, response, body)->
+        console.log 'livereloaded due to change: ' + filename
+
   # http://stackoverflow.com/a/19215370/665261
   server.use (req, res, next)->
     oldWrite = res.write;
@@ -196,6 +205,18 @@ run = ->
             str = fs.readFileSync(path.resolve currentpath).toString 'UTF-8'
             if !!literate then str = illiterate str
             if not raw then str = handlers[item].process str, path.resolve currentpath
+            ## process lr to add livereload script to page
+            if program.livereload and req.query.lr?
+              lr_tag = """
+              <script src="/livereload.js?snipver=1"></script>
+              """
+              $ = cheerio.load str
+              if $('script').length
+                $('script').before lr_tag
+                str = $.html()
+              else
+                str = lr_tag + str
+
             ## TODO: bug - `demo/sample-literate.coffee` and `demo/literate-javascript.js.md` shows content-type `text/less`
             res.setHeader 'Content-Type', if !!raw then "text/#{item}; charset=utf-8" else "#{mimes[handlers[item]?.chain]}; charset=utf-8"
             res.setHeader 'Content-Length', str.length
