@@ -17,7 +17,7 @@ run = ->
   express = require 'express'
   serveIndex = require 'serve-index'
   compression = require 'compression'
-  # morgan = require 'morgan'
+  morgan = require 'morgan'
   coffee = require 'coffee-script'
   marked = require 'marked'
   stylus = require 'stylus'
@@ -36,20 +36,13 @@ run = ->
 
   program.version(require('../package.json').version)
   .usage('[options] [dir]')
-  # .option('-F, --format <fmt>', 'specify the log format string', 'dev')
   .option('-p, --port <port>', 'specify the port [8080]', Number, 8080)
   .option('-h, --hidden', 'enable hidden file serving')
-  # .option('-s, --no-stylus', 'disable stylus rendering')
-  # .option('-j, --no-jade', 'disable jade rendering')
-  # .option('    --no-less', 'disable less css rendering')
   .option('    --cache <cache-folder>', 'store copy of each served file in `cache` folder', String)
-  # .option('    --no-coffee', 'disable coffee script rendering')
-  # .option('    --no-markdown', 'disable markdown rendering')
-  # .option('    --no-illiterate', 'disable illiterate rendering')
-  # .option('    --no-slim', 'disable slim rendering')
   .option('    --no-livereload', 'disable livereload watching served directory (add `lr` to querystring of requested resource to inject client script)')
   # .option('-i, --no-icons', 'disable icons')
-  # .option('-l, --no-logs', 'disable request logging')
+  .option('    --no-logs', 'disable request logging')
+  .option('-f, --format <fmt>', 'specify the log format string (npmjs.com/package/morgan)', 'dev')
   # .option('-d, --no-dirs', 'disable directory serving')
   # .option('-f, --favicon <path>', 'serve the given favicon')
   # .option('-c, --cors', 'allows cross origin access serving')
@@ -135,6 +128,10 @@ run = ->
     fs.watch sourcepath, {recursive:true}, (e, filename)->
       request "http://127.0.0.1:#{program.port}/changed?files="+filename, (error, response, body)->
         console.log 'livereloaded due to change: ' + filename
+
+  # request logging
+  if program.logs
+    server.use morgan program.format
 
   # http://stackoverflow.com/a/19215370/665261
   server.use (req, res, next)->
