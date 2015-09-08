@@ -1,13 +1,22 @@
-# sir
+# Sir
 
-Simple command line development server forked from [serve](https://github.com/visionmedia/serve) and with added features and modifications:
+## The polite development server
 
-- added coffee-script
-- added markdown
-- general approach to preparsed files
-- address preprocessed files by source name for source as text/plain
-- address preprocessed files by compiled name for compiled code
-- preprocessed code is rendered on the fly
+- serves as plain or pre-processed (on-the-fly):
+  - coffee-script
+  - less
+  - sass/scss
+  - stylus
+  - markdown
+  - jade
+  - slim
+- CORS
+- request logging
+- beautified pre-processor output
+- livereload
+- execute shell command on request
+- save cache of requested files (useful for pre-processed output)
+- multiple 
 
 ## Installation
 
@@ -15,28 +24,21 @@ Simple command line development server forked from [serve](https://github.com/vi
 
 ## Usage
 
-
-    Usage: sir [options] [dir]
+    Usage: sir [options] <dir>
 
     Options:
 
-      -h, --help            output usage information
-      -V, --version         output the version number
-      -F, --format <fmt>    specify the log format string
-      -p, --port <port>     specify the port [3000]
-      -H, --hidden          enable hidden file serving
-      -S, --no-stylus       disable stylus rendering
-      -J, --no-jade         disable jade rendering
-          --no-less         disable less css rendering
-          --no-coffee       disable coffee script rendering
-          --no-markdown     disable markdown rendering
-      -I, --no-icons        disable icons
-      -L, --no-logs         disable request logging
-      -D, --no-dirs         disable directory serving
-      -f, --favicon <path>  serve the given favicon
-      -C, --cors            allows cross origin access serving
-          --compress        gzip or deflate the response
-          --exec <cmd>      execute command on each request
+      -h, --help                  output usage information
+      -V, --version               output the version number
+      -p, --port <port>           specify the port [8080]
+      -h, --hidden                enable hidden file serving
+          --cache <cache-folder>  store copy of each served file in `cache` folder
+          --no-livereload         disable livereload watching served directory (add `lr` to querystring of requested resource to inject client script)
+          --no-logs               disable request logging
+      -f, --format <fmt>          specify the log format string (npmjs.com/package/morgan)
+          --compress              gzip or deflate the response
+          --exec <cmd>            execute command on each request
+          --no-cors               disable cross origin access serving
 
 ## Examples
 
