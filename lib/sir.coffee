@@ -29,9 +29,9 @@ run = ->
   _ = require 'lodash'
   illiterate = require 'illiterate'
   beautify = require 'js-beautify'
-  cheerio = require('cheerio')
-  tinylr = require('tiny-lr')
-  request = require('request')
+  cheerio = require 'cheerio'
+  tinylr = require 'tiny-lr'
+  request = require 'request'
 
   program.version(require('../package.json').version)
   .usage('[options] <dir>')
@@ -140,15 +140,6 @@ run = ->
       if req.method == 'OPTIONS'
         endStore res
       next()
-
-  # livereload (add ?lr to url to activate - watches served paths)
-  if program.livereload
-    server.use(tinylr.middleware({ app: server }))
-    # TODO: use https://www.npmjs.com/package/watchr
-    # TODO: send served filename, not changed filename to handle preprocessed files
-    fs.watch sourcepath, {recursive:true}, (e, filename)->
-      request "http://127.0.0.1:#{program.port}/changed?files="+filename, (error, response, body)->
-        console.log 'livereloaded due to change: ' + filename
 
   # request logging
   if program.logs
@@ -271,6 +262,15 @@ run = ->
             {{/files}}
           </ul>
           """, dirs: dirs, files: files
+
+  # livereload (add ?lr to url to activate - watches served paths)
+  if program.livereload
+    server.use(tinylr.middleware({ app: server }))
+    # TODO: use https://www.npmjs.com/package/watchr
+    # TODO: send served filename, not changed filename to handle preprocessed files
+    fs.watch sourcepath, {recursive:true}, (e, filename)->
+      request "http://127.0.0.1:#{program.port}/changed?files="+filename, (error, response, body)->
+        console.log 'livereloaded due to change: ' + filename
 
   # start the server
   server.listen program.port, ->
