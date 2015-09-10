@@ -1,12 +1,5 @@
 run = ->
 
-  process.on 'uncaughtException', (err) ->
-    if err.code == 'EADDRINUSE'
-      port = if program.port then 'port ' + program.port else 'the port'
-      console.error 'Looks like ' + port + ' is already in use\nTry a different port with: --port <PORT>'
-    else
-      console.error err
-
   url = require 'url'
   fs = require 'fs'
   path = require 'path'
@@ -29,9 +22,10 @@ run = ->
   _ = require 'lodash'
   illiterate = require 'illiterate'
   beautify = require 'js-beautify'
-  cheerio = require('cheerio')
-  tinylr = require('tiny-lr')
-  request = require('request')
+  cheerio = require 'cheerio'
+  tinylr = require 'tiny-lr'
+  request = require 'request'
+  proxy = require 'proxy-middleware'
 
   program.version(require('../package.json').version)
   .usage('[options] <dir>')
@@ -141,15 +135,6 @@ run = ->
         endStore res
       next()
 
-  # livereload (add ?lr to url to activate - watches served paths)
-  if program.livereload
-    server.use(tinylr.middleware({ app: server }))
-    # TODO: use https://www.npmjs.com/package/watchr
-    # TODO: send served filename, not changed filename to handle preprocessed files
-    fs.watch sourcepath, {recursive:true}, (e, filename)->
-      request "http://127.0.0.1:#{program.port}/changed?files="+filename, (error, response, body)->
-        console.log 'livereloaded due to change: ' + filename
-
   # request logging
   if program.logs
     server.use morgan program.format
@@ -191,86 +176,105 @@ run = ->
   sources = if program.args.length then program.args else ['.']
   served = {}
   for source in sources
-    mypaths = source.split ':'
-    myurl = if mypaths.length > 1 then mypaths.shift() else ''
-    for mypath in mypaths
-      served[myurl] = served[myurl] or {}
-      served[myurl].paths = (served[myurl].paths or []).concat mypath
-      served[myurl].files = (served[myurl].files or []).concat fs.readdirSync path.resolve mypath
+    mypaths = source.split '::'
+    if mypaths and mypaths.length > 1
+      myurl = mypaths.shift()
+      served[myurl] = {proxy:mypaths.join('::')}
+    else
+      mypaths = source.split ':'
+      myurl = if mypaths.length > 1 then mypaths.shift() else ''
+      for mypath in mypaths
+        served[myurl] = served[myurl] or {paths:[],files:[]}
+        served[myurl].paths.push mypath
+        served[myurl].files.push fs.readdirSync path.resolve mypath
   for myurl, items of served
-    for mypath in items.paths
-      server.use (req, res, next)->
-        fallthrough = true
-        _.each _.keys(handlers), (item, index)->
-          ## TODO: safe alternative to `req._parsedUrl`
-          replaced_path = req._parsedUrl.pathname.replace new RegExp("^\/?#{myurl}"), ""
-          m = replaced_path.match new RegExp "^/?(.+)\\.#{handlers[item]?.chain}$"
-          literate_path = "#{replaced_path}.md".replace(/^\//,'')
-          compilable_path = !!m and "#{m[1]}.#{item}"
-          literate_compilable_path = !!m and "#{m[1]}.#{item}.md"
-          literate = null
-          raw = null
-          if !!fallthrough and (
-              (fs.existsSync(path.resolve(path.join(mypath,literate_path))) and literate = true and raw = true) or !!m and (
-                fs.existsSync(path.resolve(path.join(mypath,compilable_path))) or (
-                  fs.existsSync(path.resolve(path.join(mypath,literate_compilable_path))) and literate = true
+    if items.proxy
+      proxyurl = ('/'+myurl).replace(/^\/+/,'/')
+      server.use proxyurl, proxy items.proxy
+      console.log 'proxying ' + proxyurl + ' to ' + items.proxy
+    else
+      for mypath in items.paths
+        server.use (req, res, next)->
+          fallthrough = true
+          _.each _.keys(handlers), (item, index)->
+            ## TODO: safe alternative to `req._parsedUrl`
+            replaced_path = req._parsedUrl.pathname.replace new RegExp("^\/?#{myurl}"), ""
+            m = replaced_path.match new RegExp "^/?(.+)\\.#{handlers[item]?.chain}$"
+            literate_path = "#{replaced_path}.md".replace(/^\//,'')
+            compilable_path = !!m and "#{m[1]}.#{item}"
+            literate_compilable_path = !!m and "#{m[1]}.#{item}.md"
+            literate = null
+            raw = null
+            if !!fallthrough and (
+                (fs.existsSync(path.resolve(path.join(mypath,literate_path))) and literate = true and raw = true) or !!m and (
+                  fs.existsSync(path.resolve(path.join(mypath,compilable_path))) or (
+                    fs.existsSync(path.resolve(path.join(mypath,literate_compilable_path))) and literate = true
+                  )
                 )
               )
-            )
-            fallthrough = false
-            currentpath = if !!raw then literate_path else if literate then literate_compilable_path else compilable_path
-            currentpath = path.join mypath, currentpath
-            str = fs.readFileSync(path.resolve currentpath).toString 'UTF-8'
-            if !!literate then str = illiterate str
-            if not raw then str = handlers[item].process str, path.resolve currentpath
-            ## process lr to add livereload script to page
-            if program.livereload and req.query.lr?
-              lr_tag = """
-              <script src="/livereload.js?snipver=1"></script>
-              """
-              $ = cheerio.load str
-              if $('script').length
-                $('script').before lr_tag
-                str = $.html()
-              else
-                str = lr_tag + str
-            if !!literate and !!raw
-              part = path.extname(replaced_path).replace(/^\./, '')
-              ## TODO: perhaps use filetype for mime instead of plain ... #{part or 'plain'}"
-              literate_mime = if mimes[part] then mimes[part] else "text/plain"
-            res.setHeader 'Content-Type', if !!literate_mime then "#{literate_mime}; charset=utf-8" else if !!raw then "text/#{item}; charset=utf-8" else "#{mimes[handlers[item]?.chain]}; charset=utf-8"
-            res.setHeader 'Content-Length', str.length
-            res.end str
-        next() if fallthrough
-      server.use "/#{myurl}", express.static mypath, hidden:program.hidden
-      server.use (req, res, next)->
-        if req.query.format == 'json'
-          req.headers.accept = 'application/json'
-        else if req.query.format == 'text'
-          req.headers.accept = 'text/plain'
-        next()
+              fallthrough = false
+              currentpath = if !!raw then literate_path else if literate then literate_compilable_path else compilable_path
+              currentpath = path.join mypath, currentpath
+              str = fs.readFileSync(path.resolve currentpath).toString 'UTF-8'
+              if !!literate then str = illiterate str
+              if not raw then str = handlers[item].process str, path.resolve currentpath
+              ## process lr to add livereload script to page
+              if program.livereload and req.query.lr?
+                lr_tag = """
+                <script src="/livereload.js?snipver=1"></script>
+                """
+                $ = cheerio.load str
+                if $('script').length
+                  $('script').before lr_tag
+                  str = $.html()
+                else
+                  str = lr_tag + str
+              if !!literate and !!raw
+                part = path.extname(replaced_path).replace(/^\./, '')
+                ## TODO: perhaps use filetype for mime instead of plain ... #{part or 'plain'}"
+                literate_mime = if mimes[part] then mimes[part] else "text/plain"
+              res.setHeader 'Content-Type', if !!literate_mime then "#{literate_mime}; charset=utf-8" else if !!raw then "text/#{item}; charset=utf-8" else "#{mimes[handlers[item]?.chain]}; charset=utf-8"
+              res.setHeader 'Content-Length', str.length
+              res.end str
+          next() if fallthrough
+        server.use "/#{myurl}", express.static mypath, hidden:program.hidden
+        server.use (req, res, next)->
+          if req.query.format == 'json'
+            req.headers.accept = 'application/json'
+          else if req.query.format == 'text'
+            req.headers.accept = 'text/plain'
+          next()
 
-      server.use "/#{myurl}", serveIndex mypath,
-        'icons': false
-        template: (locals, callback)->
-          files = []
-          dirs = []
-          ## TODO: use combined file list, not just one folder
-          # filelist = items.files.map (file)-> name: file
-          # console.log served[myurl]
-          _.each locals.fileList, (file, i)->
-            fileobject = a:file.name, href:locals.directory.replace(/\/$/,'')+'/'+file.name
-            if file.name.match /\./ then files.push fileobject else dirs.push fileobject
-          callback 0, mustache.render """
-          <ul>
-            {{#dirs}}
-            <li><a href="{{href}}">{{a}}</a></li>
-            {{/dirs}}
-            {{#files}}
-            <li><a href="{{href}}">{{a}}</a></li>
-            {{/files}}
-          </ul>
-          """, dirs: dirs, files: files
+        server.use "/#{myurl}", serveIndex mypath,
+          'icons': false
+          template: (locals, callback)->
+            files = []
+            dirs = []
+            ## TODO: use combined file list, not just one folder
+            # filelist = items.files.map (file)-> name: file
+            # console.log served[myurl]
+            _.each locals.fileList, (file, i)->
+              fileobject = a:file.name, href:locals.directory.replace(/\/$/,'')+'/'+file.name
+              if file.name.match /\./ then files.push fileobject else dirs.push fileobject
+            callback 0, mustache.render """
+            <ul>
+              {{#dirs}}
+              <li><a href="{{href}}">{{a}}</a></li>
+              {{/dirs}}
+              {{#files}}
+              <li><a href="{{href}}">{{a}}</a></li>
+              {{/files}}
+            </ul>
+            """, dirs: dirs, files: files
+
+  # livereload (add ?lr to url to activate - watches served paths)
+  if program.livereload
+    server.use(tinylr.middleware({ app: server }))
+    # TODO: use https://www.npmjs.com/package/watchr
+    # TODO: send served filename, not changed filename to handle preprocessed files
+    fs.watch sourcepath, {recursive:true}, (e, filename)->
+      request "http://127.0.0.1:#{program.port}/changed?files="+filename, (error, response, body)->
+        console.log 'livereloaded due to change: ' + filename
 
   # start the server
   server.listen program.port, ->

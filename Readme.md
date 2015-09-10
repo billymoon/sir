@@ -16,7 +16,9 @@
 - livereload
 - execute shell command on request
 - save cache of requested files (useful for pre-processed output)
-- multiple 
+- path based proxy (useful to proxy to api server, or assets from live site)
+- multiple server roots
+- aliased server roots
 
 ## Installation
 
@@ -42,40 +44,43 @@
 
 ## Examples
 
- HTTP Accept support built into `connect.directory()`:
+HTTP Accept support...
  
-     $ curl http://local:3000/ -H "Accept: text/plain"
+Assuming server runnung with something like... `sir .`
+
+     $ curl http://localhost:8080/ -H "Accept: text/plain"
      bin
      History.md
      node_modules
-     package.json
-     Readme.md
-
-  Requesting a file:
-
-    $ curl http://local:3000/Readme.md
-
-     # sir
      ...
 
-  Requesting JSON for the directory listing:
+Requesting a file:
 
-    $ curl http://local:3000/ -H "Accept: application/json"
-    ["bin","History.md","node_modules","package.json","Readme.md"]
+    $ curl http://localhost:8080/Readme.md
+    # Sir
+    
+    ## The polite development server
+    ...
 
- Directory listing served by connect's `connect.directory()` middleware.
+Requesting JSON for the directory listing:
 
-  ![directory listings](http://f.cl.ly/items/100M2C3o0p2u3A0q1o3H/Screenshot.png)
+    $ curl http://localhost:8080/ -H "Accept: application/json"
+    [
+      "bin",
+      "History.md",
+      "node_modules"
+      ...
+    ]
 
 ## Extra Awesomeness
 
 You can install of vendor libraries to be additionally served up from a `vendor` folder...
 
-    $ cd node_modules/sir
+    $ cd $(sire --vendor-path)
     $ npm run fetch -- moment underscore
     $ npm run vendor
 
-Now you can run `sir` as usual, and will have the relevant files served from `http://localhost:8080/vendor`.
+Now you can run `sir . vendor:$(sir --vendor-path)`, with vendor files served from `http://localhost:8080/vendor`.
 
 (this feature uses [bower-installer](https://github.com/blittle/bower-installer) under the hood)
 
