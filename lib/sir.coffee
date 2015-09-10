@@ -254,7 +254,13 @@ run = ->
             # filelist = items.files.map (file)-> name: file
             # console.log served[myurl]
             _.each locals.fileList, (file, i)->
-              fileobject = a:file.name, href:locals.directory.replace(/\/$/,'')+'/'+file.name
+              fileobject = generated:[], a:file.name, href:locals.directory.replace(/\/$/,'')+'/'+file.name
+              extstr = file.name.match /\.([^.]+)$/
+              if extstr
+                exts = extstr[1].split('.')
+                for ext in exts
+                  if handlers[ext]?.chain
+                    fileobject.generated.push a:handlers[ext].chain, href:fileobject.href.replace /[^.]+$/, handlers[ext].chain
               if file.name.match /\./ then files.push fileobject else dirs.push fileobject
             callback 0, mustache.render """
             <ul>
@@ -262,7 +268,12 @@ run = ->
               <li><a href="{{href}}">{{a}}</a></li>
               {{/dirs}}
               {{#files}}
-              <li><a href="{{href}}">{{a}}</a></li>
+              <li>
+                <a href="{{href}}">{{a}}</a>
+                {{#generated}}
+                  [<a href="{{href}}">{{a}}</a>]
+                {{/generated}}
+              </li>
               {{/files}}
             </ul>
             """, dirs: dirs, files: files
