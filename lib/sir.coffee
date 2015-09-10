@@ -255,12 +255,16 @@ run = ->
             # console.log served[myurl]
             _.each locals.fileList, (file, i)->
               fileobject = generated:[], a:file.name, href:locals.directory.replace(/\/$/,'')+'/'+file.name
-              extstr = file.name.match /\.([^.]+)$/
+              extstr = file.name.match /(?:\.([^.]+))?\.([^.]+)$/
               if extstr
-                exts = extstr[1].split('.')
-                for ext in exts
+                ext = extstr[2]
+                if handlers[ext]?.chain
+                  fileobject.generated.push a:handlers[ext].chain, href:fileobject.href.replace /[^.]+$/, handlers[ext].chain
+                ext = extstr[1]
+                if !!ext
                   if handlers[ext]?.chain
-                    fileobject.generated.push a:handlers[ext].chain, href:fileobject.href.replace /[^.]+$/, handlers[ext].chain
+                    fileobject.generated.push a:ext, href:fileobject.href.replace /\.[^.]+$/, ''
+                    fileobject.generated.push a:handlers[ext].chain, href:fileobject.href.replace /[^.]+\.[^.]+$/, handlers[ext].chain
               if file.name.match /\./ then files.push fileobject else dirs.push fileobject
             callback 0, mustache.render """
             <ul>
