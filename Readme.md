@@ -10,6 +10,7 @@
   - markdown
   - jade
   - slim
+- literate style coffee-script, js, jade, slim, stylus, etc... even md :-) all à la coffee script litrate style (via [npm/illiterate](https://www.npmjs.com/package/illiterate))
 - CORS
 - request logging
 - beautified pre-processor output
