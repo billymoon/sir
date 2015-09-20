@@ -183,7 +183,7 @@ run = ->
     else
       mypaths = source.split ':'
       myurl = if mypaths.length > 1 then mypaths.shift() else ''
-      for mypath in mypaths
+      do -> for mypath in mypaths
         served[myurl] = served[myurl] or {paths:[],files:[]}
         served[myurl].paths.push mypath
         served[myurl].files.push fs.readdirSync path.resolve mypath
@@ -193,7 +193,7 @@ run = ->
       server.use proxyurl, proxy items.proxy
       console.log 'proxying ' + proxyurl + ' to ' + items.proxy
     else
-      for mypath in items.paths
+      do -> for mypath in items.paths
         server.use (req, res, next)->
           fallthrough = true
           _.each _.keys(handlers), (item, index)->
@@ -293,6 +293,6 @@ run = ->
 
   # start the server
   server.listen program.port, ->
-    console.log 'serving %s on port %d', sourcepath, program.port  
+    console.log 'serving %s on port %d', sourcepath, program.port
 
 module.exports = run: run
