@@ -8,8 +8,6 @@
     "connect"
   ],
   "scripts": {
-    "fetch": "bower install",
-    "vendor": "bower-installer"
   },
   "author": "Billy Moon <billy@itaccess.org>",
   "preferGlobal": true,
@@ -20,8 +18,6 @@
   },
   "dependencies": {
     "babel": "^5.6.14",
-    "bower": "^1.3.12",
-    "bower-installer": "^1.2.0",
     "bytes": "*",
     "cheerio": "^0.19.0",
     "coffee-script": "*",
