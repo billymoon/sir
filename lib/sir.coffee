@@ -39,17 +39,12 @@ run = ->
   .option('    --compress', 'gzip or deflate the response')
   .option('    --exec <cmd>', 'execute command on each request')
   .option('    --no-cors', 'disable cross origin access serving')
-  .option('    --vendor-path', 'display the path to the vendor libraries and exit')
   ## TODO: --fetch lib,lib,lib
   ## TODO: consider re-implementing these features...
   # .option('-i, --no-icons', 'disable icons')
   # .option('-d, --no-dirs', 'disable directory serving')
   # .option('-f, --favicon <path>', 'serve the given favicon')
   .parse process.argv
-
-  if program.vendorPath
-    console.log path.resolve path.join __dirname, '..', 'lib/extra/vendor'
-    process.exit()
 
   mimes =
     html: 'text/html'
@@ -222,7 +217,7 @@ run = ->
               ## process lr to add livereload script to page
               if program.livereload and req.query.lr?
                 lr_tag = """
-                <script src="/livereload.js?snipver=1"></script>
+                <script src="/livereload.js?snipver=1"></script>\n
                 """
                 $ = cheerio.load str
                 if $('script').length
