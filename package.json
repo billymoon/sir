@@ -7,8 +7,7 @@
     "server",
     "connect"
   ],
-  "scripts": {
-  },
+  "scripts": {},
   "author": "Billy Moon <billy@itaccess.org>",
   "preferGlobal": true,
   "homepage": "https://github.com/billymoon/sir",
@@ -23,6 +22,7 @@
     "coffee-script": "*",
     "commander": "0.6.1",
     "compression": "^1.5.1",
+    "expand-home-dir": "0.0.2",
     "express": "^4.13.1",
     "illiterate": "0.4.0",
     "jade": "*",

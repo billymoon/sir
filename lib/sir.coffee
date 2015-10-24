@@ -1,16 +1,29 @@
 run = ->
 
+  # core libs
   url = require 'url'
   fs = require 'fs'
   path = require 'path'
   exec = require('child_process').exec
 
-  mkdirp = require 'mkdirp'
-  program = require 'commander'
+  # vendor libs
   express = require 'express'
   serveIndex = require 'serve-index'
   compression = require 'compression'
+  proxy = require 'proxy-middleware'
+  tinylr = require 'tiny-lr'
   morgan = require 'morgan'
+  mkdirp = require 'mkdirp'
+  watchr = require 'watchr'
+  program = require 'commander'
+  _ = require 'lodash'
+  illiterate = require 'illiterate'
+  beautify = require 'js-beautify'
+  cheerio = require 'cheerio'
+  request = require 'request'
+  expandHomeDir = require 'expand-home-dir'
+
+  # pre-process languages
   coffee = require 'coffee-script'
   marked = require 'marked'
   stylus = require 'stylus'
@@ -19,15 +32,8 @@ run = ->
   sass = require 'node-sass'
   slm = require 'slm'
   mustache = require 'mustache'
-  _ = require 'lodash'
-  illiterate = require 'illiterate'
-  beautify = require 'js-beautify'
-  cheerio = require 'cheerio'
-  tinylr = require 'tiny-lr'
-  request = require 'request'
-  proxy = require 'proxy-middleware'
-  watchr = require 'watchr'
 
+  # options and usage
   program.version(require('../package.json').version)
   .usage('[options] <dir>')
   .option('-p, --port <port>', 'specify the port [8080]', Number, 8080)
@@ -39,13 +45,13 @@ run = ->
   .option('    --compress', 'gzip or deflate the response')
   .option('    --exec <cmd>', 'execute command on each request')
   .option('    --no-cors', 'disable cross origin access serving')
-  ## TODO: --fetch lib,lib,lib
   ## TODO: consider re-implementing these features...
   # .option('-i, --no-icons', 'disable icons')
   # .option('-d, --no-dirs', 'disable directory serving')
   # .option('-f, --favicon <path>', 'serve the given favicon')
   .parse process.argv
 
+  # general config
   mimes =
     html: 'text/html'
     css: 'text/css'
@@ -53,6 +59,7 @@ run = ->
     xml: 'text/xml'
     xsl: 'text/xsl'
 
+  # pre-processor config
   handlers =
     less:
       process: (str)-> css=null; less.render(str, (e, compiled)-> css=compiled); css
@@ -107,7 +114,8 @@ run = ->
   slm.template.registerEmbeddedFunction 'sass', (str) ->
     '<style type="text/css">' + handlers.sass.process(str) + '</style>'
 
-  sourcepath = path.resolve program.args[0] or '.'
+  # default source path is cwd
+  sourcepath = path.resolve program.args[0] or process.cwd()
 
   # setup the server
   server = express()
@@ -172,6 +180,7 @@ run = ->
   sources = if program.args.length then program.args else ['.']
   served = {}
   for source in sources
+    # TODO: unify and simplify syntax for multiple doc sources, and proxy definitions
     mypaths = source.split '::'
     if mypaths and mypaths.length > 1
       myurl = mypaths.shift()
@@ -181,8 +190,8 @@ run = ->
       myurl = if mypaths.length > 1 then mypaths.shift() else ''
       do -> for mypath in mypaths
         served[myurl] = served[myurl] or {paths:[],files:[]}
-        served[myurl].paths.push mypath
-        served[myurl].files.push fs.readdirSync path.resolve mypath
+        served[myurl].paths.push expandHomeDir mypath
+        served[myurl].files.push fs.readdirSync path.resolve expandHomeDir mypath
   for myurl, items of served
     if items.proxy
       proxyurl = ('/'+myurl).replace(/^\/+/,'/')
@@ -280,7 +289,7 @@ run = ->
 
   # livereload (add ?lr to url to activate - watches served paths)
   if program.livereload
-    server.use(tinylr.middleware({ app: server }))
+    server.use tinylr.middleware app: server
     watchr.watch
       path: sourcepath
       catchupDelay: 200
