@@ -286,10 +286,14 @@ run = ->
   if program.livereload
     server.use(tinylr.middleware({ app: server }))
     # TODO: use https://www.npmjs.com/package/watchr
-    # TODO: send served filename, not changed filename to handle preprocessed files
     fs.watch sourcepath, {recursive:true}, (e, filename)->
-      request "http://127.0.0.1:#{program.port}/changed?files="+filename, (error, response, body)->
-        console.log 'livereloaded due to change: ' + filename
+      # TODO: make this blacklist configurable, and probably a whitelist, perhaps derived from handler extensions
+      blacklist = /\.git|\.DS_Store/
+      if !filename.match blacklist
+        # TODO: derive from handler extensions, and handle more than css
+        served_filename = filename.replace /\.(styl(us)?|less|sass|scss)$/, '.css'
+        request "http://127.0.0.1:#{program.port}/changed?files="+served_filename, (error, response, body)->
+          console.log 'livereloaded due to change: ' + filename
 
   # start the server
   server.listen program.port, ->
