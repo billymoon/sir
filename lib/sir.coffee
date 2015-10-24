@@ -26,6 +26,7 @@ run = ->
   tinylr = require 'tiny-lr'
   request = require 'request'
   proxy = require 'proxy-middleware'
+  watchr = require 'watchr'
 
   program.version(require('../package.json').version)
   .usage('[options] <dir>')
@@ -285,13 +286,17 @@ run = ->
   # livereload (add ?lr to url to activate - watches served paths)
   if program.livereload
     server.use(tinylr.middleware({ app: server }))
-    # TODO: use https://www.npmjs.com/package/watchr
-    fs.watch sourcepath, {recursive:true}, (e, filename)->
-      m =  filename.match /\.([^.]+)$/
-      if m?[1] and (handlers[m[1]] or mimes[m[1]])
-        served_filename = filename.replace RegExp("#{m[1]}$"), handlers[m[1]]?.chain or m[1]
-        request "http://127.0.0.1:#{program.port}/changed?files="+served_filename, (error, response, body)->
-          console.log 'livereloaded due to change: ' + filename
+    watchr.watch
+      path: sourcepath
+      catchupDelay: 200
+      listeners:
+        change: (type, filename)-> # additional arguments: currentStat and originalStat
+          m = filename.match /\.([^.]+)$/
+          extension = m?[1]
+          if !!extension and (handlers[extension] or mimes[extension])
+            served_filename = filename.replace RegExp("#{m[1]}$"), handlers[extension]?.chain or extension
+            request "http://127.0.0.1:#{program.port}/changed?files="+served_filename, (error, response, body)->
+              console.log 'livereloaded due to change: ' + filename
 
   # start the server
   server.listen program.port, ->

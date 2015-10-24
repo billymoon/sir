@@ -46,7 +46,8 @@
     "slm": "^0.4.1",
     "stylus": "*",
     "tiny-lr": "^0.1.6",
-    "underscore": "^1.8.3"
+    "underscore": "^1.8.3",
+    "watchr": "^2.4.13"
   },
   "bin": {
     "sir": "./bin/sir"
