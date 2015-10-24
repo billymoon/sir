@@ -2,24 +2,16 @@
 
 ## The polite development server
 
-- serves as plain or pre-processed (on-the-fly):
-  - coffee-script
-  - less
-  - sass/scss
-  - stylus
-  - markdown
-  - jade
-  - slim
-- literate style coffee-script, js, jade, slim, stylus, etc... even md :-) all à la coffee script litrate style (via [npm/illiterate](https://www.npmjs.com/package/illiterate))
-- CORS
-- request logging
-- beautified pre-processor output
+- serves as plain or pre-processed on-the-fly: coffee-script, less, sass/scss, stylus, markdown, jade, slim
 - livereload
+- multiple and aliased server roots
+- path based proxy (useful to proxy to api server, or assets from live site)
+- request logging (customizable, uses [morgan](npmjs.com/package/morgan))
+- beautified pre-processed file output
 - execute shell command on request
 - save cache of requested files (useful for pre-processed output)
-- path based proxy (useful to proxy to api server, or assets from live site)
-- multiple server roots
-- aliased server roots
+- CORS
+- literate style coffee-script, js, jade, slim, stylus, etc... even md :-) all à la coffee script litrate style (via [npm/illiterate](https://www.npmjs.com/package/illiterate))
 
 ## Installation
 
@@ -45,17 +37,9 @@
 
 ## Examples
 
-HTTP Accept support...
-
 Assuming server runnung with something like... `sir .`
 
-     $ curl http://localhost:8080/ -H "Accept: text/plain"
-     bin
-     History.md
-     node_modules
-     ...
-
-Requesting a file:
+### Requesting a file:
 
     $ curl http://localhost:8080/Readme.md
     # Sir
@@ -63,8 +47,23 @@ Requesting a file:
     ## The polite development server
     ...
 
-Requesting JSON for the directory listing:
+### Requesting a preprocessed version of a file:
 
+Make the same request as if the file had already been compiled, and was being served, and it will be processed on-the-fly...
+
+    $ curl http://localhost:8080/Readme.html
+    <h1 id="sir">Sir</h1>
+    <h2 id="the-polite-development-server">The polite development server</h2>
+    ...
+
+This also works for sass, coffeescript, jade, etc...
+
+### Requesting the directory listing:
+
+Add a `format` parameter to querystring, or add an `Accept` paramater header. Valid types are `json`, `text` and `html`.
+
+    $ curl http://localhost:8080/?format=json
+    ... or ...
     $ curl http://localhost:8080/ -H "Accept: application/json"
     [
       "bin",
@@ -73,19 +72,42 @@ Requesting JSON for the directory listing:
       ...
     ]
 
-## Extra Awesomeness
+Ar for plain text list
 
-You can install of vendor libraries to be additionally served up from a `vendor` folder...
+    $ curl http://localhost:8080/?format=text
+    ... or ...
+    $ curl http://localhost:8080/ -H "Accept: text/plain"
+    bin
+    History.md
+    node_modules
+    ...
 
-    $ cd $(sir --vendor-path)
-    $ npm run fetch -- moment underscore
-    $ npm run vendor
+### Livereload
 
-Now you can run `sir . vendor:$(sir --vendor-path)`, with vendor files served from `http://localhost:8080/vendor`.
+By default, livereload is enabled on the same port as the main server. This should work with the browser's livereload plugin, or adding the `/livereload.js?snipver=1` script to your html (which is served up by the sir). For convenience, adding `lr` to the querystring will inject `<script src="/livereload.js?snipver=1"></script>` into your served file.
 
-(this feature uses [bower-installer](https://github.com/blittle/bower-installer) under the hood)
+... without livereload ...
 
-**N.B.** this feature should be moved into a `sir` command - something like `sir fetch moment` - pull requests welcome :)
+    $ curl http://localhost:8080/Readme.html
+    <h1 id="sir">Sir</h1>
+    <h2 id="the-polite-development-server">The polite development server</h2>
+
+... with livereload ...
+
+    $ curl http://localhost:8080/Readme.html?lr
+    <script src="/livereload.js?snipver=1"></script>
+    <h1 id="sir">Sir</h1>
+    <h2 id="the-polite-development-server">The polite development server</h2>
+
+If you don't want the livereload feature enabled at all, then there is a `--no-livereload` flag
+
+### Cache
+
+Useful for saving processed version of source files, for example, if you have `index.jade`, and `style.less` and want to save the html and css, add a `--cache backup` flag, and then visit `http://localhost:8080/index.html` in your browser. There should be a `index.html` and a `style.css` in the backup folder.
+
+### Compress
+
+Add gzip compression to served assets with the `--compress` flag.
 
 ## License
 

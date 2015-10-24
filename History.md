@@ -1,3 +1,44 @@
+1.2.3 / 2015-10-24
+
+  * use watchr to trigger livereload
+  * derive watch triggers from handlers and mimes
+
+1.2.2 / 2015-10-24
+
+  * report served not source file to livereload
+
+1.2.1 / 2015-09-21
+
+  * fix rendered assets when multiple roots specified
+
+1.2.0 / 2015-09-11
+
+  * use illiterate library
+
+1.1.0 / 2015-09-10
+
+  * replace connect with express
+  * rewrite in coffee-script
+  * livereload
+  * file browser
+  * feature to store cache of served files locally
+  * compression
+  * request logging
+  * exec command on each request
+  * CORS
+
+0.4.2 / 2015-07-08
+
+  * code formatting, and slm output formatting
+
+0.4.0 / 2015-06-07
+
+  * slim support (using slm)
+
+0.3.0 / 2015-06-07
+
+  * handle illiterate js
+
 0.1.1 / 2014-02-01
 
   * stop logging styl files to console
