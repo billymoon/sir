@@ -46,7 +46,7 @@
 ## Examples
 
 HTTP Accept support...
- 
+
 Assuming server runnung with something like... `sir .`
 
      $ curl http://localhost:8080/ -H "Accept: text/plain"
@@ -59,7 +59,7 @@ Requesting a file:
 
     $ curl http://localhost:8080/Readme.md
     # Sir
-    
+
     ## The polite development server
     ...
 
@@ -77,7 +77,7 @@ Requesting JSON for the directory listing:
 
 You can install of vendor libraries to be additionally served up from a `vendor` folder...
 
-    $ cd $(sire --vendor-path)
+    $ cd $(sir --vendor-path)
     $ npm run fetch -- moment underscore
     $ npm run vendor
 
@@ -87,7 +87,7 @@ Now you can run `sir . vendor:$(sir --vendor-path)`, with vendor files served fr
 
 **N.B.** this feature should be moved into a `sir` command - something like `sir fetch moment` - pull requests welcome :)
 
-## License 
+## License
 
 (The MIT License)
 
