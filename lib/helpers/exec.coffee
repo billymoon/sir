@@ -1,6 +1,6 @@
 exec = require('child_process').exec
 
-module.exports = (command, server)->
-  if command
-    server.use (req, res, next) ->
-      exec command, next
+module.exports = (app)->
+  if app.program.exec
+    app.server.use (req, res, next) ->
+      exec app.program.exec, next
