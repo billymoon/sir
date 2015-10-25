@@ -30,7 +30,6 @@ module.exports = run: ->
     .option '    --exec <cmd>', 'execute command on each request'
     .option '    --no-cors', 'disable cross origin access serving'
     ## TODO: consider re-implementing these features...
-    # .option('-i, --no-icons', 'disable icons')
     # .option('-d, --no-dirs', 'disable directory serving')
     # .option('-f, --favicon <path>', 'serve the given favicon')
     .parse process.argv
@@ -44,12 +43,12 @@ module.exports = run: ->
       'compress'
       'cors'
       'cache'
-      'livereload'
       'logs'
     ]
     helper = require "./helpers/#{helper_name}"
     helper app
 
+  ## TODO: make this a helper, avoiding livereload ordering problem
   parse = require './parse'
   served = parse app
   for myurl, items of served
@@ -60,6 +59,12 @@ module.exports = run: ->
       do -> for mypath in items.paths
         for cb in app.hooks.pathserver
           cb mypath: mypath, myurl: myurl
+
+  for helper_name in [
+      'livereload'
+    ]
+    helper = require "./helpers/#{helper_name}"
+    helper app
 
   # start the server
   app.server.listen app.program.port, ->
