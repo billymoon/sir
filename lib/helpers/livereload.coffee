@@ -1,9 +1,10 @@
+path = require 'path'
 tinylr = require 'tiny-lr'
 watchr = require 'watchr'
 cheerio = require 'cheerio'
 request = require 'request'
 
-module.exports = (app, data)->
+module.exports = (app)->
   # livereload (add ?lr to url to activate - watches served paths)
   if app.program.livereload
 
@@ -23,7 +24,7 @@ module.exports = (app, data)->
 
     app.server.use tinylr.middleware app: app.server
     watchr.watch
-      path: data.sourcepath
+      path: path.resolve app.program.args[0] or process.cwd()
       catchupDelay: 200
       listeners:
         change: (type, filename)-> # additional arguments: currentStat and originalStat

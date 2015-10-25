@@ -43,20 +43,8 @@ module.exports = run: ->
   # pre-processor config
   handlers = require "./helpers/handlers"
 
-  # default source path is cwd
-  sourcepath = path.resolve program.args[0] or process.cwd()
-
   # setup the server
   server = express()
-
-  ## TODO: can this be combined with helpers!!?
-  for val in [
-      'preprocess'
-      'static'
-      'mime'
-      'dirlist'
-    ]
-    hooks.pathserver.push require "./helpers/#{val}"
 
   app =
     server: server
@@ -66,6 +54,10 @@ module.exports = run: ->
     mimes: mimes
 
   for val in [
+      'preprocess'
+      'static'
+      'mime'
+      'dirlist'
       'exec'
       'compress'
       'cors'
@@ -73,19 +65,20 @@ module.exports = run: ->
       'livereload'
       'logs'
     ]
-    require("./helpers/#{val}") app, {sourcepath:sourcepath}
+    helper = require "./helpers/#{val}"
+    helper app
 
   parse = require './helpers/parse'
   served = parse app
   for myurl, items of served
     if items.proxy
       proxymod = require './helpers/proxy'
-      proxymod app, { mypath: items.proxy, myurl: myurl }
+      proxymod app, mypath: items.proxy, myurl: myurl
     else
       do -> for mypath in items.paths
         for cb in hooks.pathserver
-          cb app, { mypath: mypath, myurl: myurl }
+          cb mypath: mypath, myurl: myurl
 
   # start the server
   server.listen program.port, ->
-    console.log 'serving %s on port %d', sourcepath, program.port
+    console.log 'serving %s on port %d', path.resolve(app.program.args[0] or process.cwd()), program.port

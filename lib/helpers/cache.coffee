@@ -2,7 +2,7 @@ fs = require 'fs'
 path = require 'path'
 mkdirp = require 'mkdirp'
 
-module.exports = (app, data)->
+module.exports = (app)->
   # http://stackoverflow.com/a/19215370/665261
   app.server.use (req, res, next)->
     oldWrite = res.write;

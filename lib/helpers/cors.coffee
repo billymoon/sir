@@ -1,4 +1,4 @@
-module.exports = (app, data)->
+module.exports = (app)->
   if app.program.cors
     app.server.use (req, res, next) ->
       res.setHeader 'Access-Control-Allow-Origin', '*'
