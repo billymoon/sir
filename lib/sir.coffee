@@ -6,12 +6,7 @@ run = ->
 
   # vendor libs
   express = require 'express'
-  serveIndex = require 'serve-index'
-  proxy = require 'proxy-middleware'
   program = require 'commander'
-  _ = require 'lodash'
-  illiterate = require 'illiterate'
-  mustache = require 'mustache'
 
   # options and usage
   program.version(require('../package.json').version)
@@ -34,6 +29,7 @@ run = ->
   # hooks for modules to attach to
   hooks =
     beforesend: []
+    pathserver: []
 
   # general config
   mimes =
@@ -52,6 +48,15 @@ run = ->
   # setup the server
   server = express()
 
+  ## TODO: can this be combined with helpers!!?
+  for val in [
+      'preprocess'
+      'static'
+      'mime'
+      'dirlist'
+    ]
+    hooks.pathserver.push require "./helpers/#{val}"
+
   for key, val of {
       exec: program.exec
       compress: program.compress
@@ -68,7 +73,6 @@ run = ->
   served = {}
   for source in sources
     proxy_source = null
-    console.log source
     source = source.replace /:(https?:\/\/.+)$/, (all, m1)-> console.log(m1); proxy_source = m1; ''
     mypaths = source.split ':'
     if mypaths[0]
@@ -89,92 +93,20 @@ run = ->
           served[myurl].paths.push expandHomeDir mypath
           served[myurl].files.push fs.readdirSync path.resolve expandHomeDir mypath
   for myurl, items of served
+    app =
+      server: server
+      program: program
+      handlers: handlers
+      hooks: hooks
+      mimes: mimes
     if items.proxy
-      proxyurl = ('/'+myurl).replace(/^\/+/,'/')
-      server.use proxyurl, proxy items.proxy
-      console.log 'proxying ' + proxyurl + ' to ' + items.proxy
+      proxymod = require './helpers/proxy'
+      proxymod app, { mypath: items.proxy, myurl: myurl }
     else
       ## TODO: implement each middleware as helper, injected via hooks
-      do -> for mypath in items.paths      
-        server.use (req, res, next)->
-          fallthrough = true
-          _.each _.keys(handlers), (item, index)->
-            ## TODO: safe alternative to `req._parsedUrl`
-            replaced_path = req._parsedUrl.pathname.replace new RegExp("^\/?#{myurl}"), ""
-            m = replaced_path.match new RegExp "^/?(.+)\\.#{handlers[item]?.chain}$"
-            literate_path = "#{replaced_path}.md".replace(/^\//,'')
-            compilable_path = !!m and "#{m[1]}.#{item}"
-            literate_compilable_path = !!m and "#{m[1]}.#{item}.md"
-            literate = null
-            raw = null
-            if !!fallthrough and (
-                (fs.existsSync(path.resolve(path.join(mypath,literate_path))) and literate = true and raw = true) or !!m and (
-                  fs.existsSync(path.resolve(path.join(mypath,compilable_path))) or (
-                    fs.existsSync(path.resolve(path.join(mypath,literate_compilable_path))) and literate = true
-                  )
-                )
-              )
-              fallthrough = false
-              currentpath = if !!raw then literate_path else if literate then literate_compilable_path else compilable_path
-              currentpath = path.join mypath, currentpath
-              str = fs.readFileSync(path.resolve currentpath).toString 'UTF-8'
-              if !!literate then str = illiterate str
-              if not raw then str = handlers[item].process str, path.resolve currentpath
-              # process str with beforesend hooks
-              for cb in hooks.beforesend
-                str = cb str, req, program
-              if !!literate and !!raw
-                part = path.extname(replaced_path).replace(/^\./, '')
-                ## TODO: perhaps use filetype for mime instead of plain ... #{part or 'plain'}"
-                literate_mime = if mimes[part] then mimes[part] else "text/plain"
-              res.setHeader 'Content-Type', if !!literate_mime then "#{literate_mime}; charset=utf-8" else if !!raw then "text/#{item}; charset=utf-8" else "#{mimes[handlers[item]?.chain]}; charset=utf-8"
-              res.setHeader 'Content-Length', str.length
-              res.end str
-          next() if fallthrough
-        server.use "/#{myurl}", express.static mypath, hidden:program.hidden
-        server.use (req, res, next)->
-          if req.query.format == 'json'
-            req.headers.accept = 'application/json'
-          else if req.query.format == 'text'
-            req.headers.accept = 'text/plain'
-          next()
-
-        server.use "/#{myurl}", serveIndex mypath,
-          'icons': false
-          template: (locals, callback)->
-            files = []
-            dirs = []
-            ## TODO: use combined file list, not just one folder
-            # filelist = items.files.map (file)-> name: file
-            # console.log served[myurl]
-            _.each locals.fileList, (file, i)->
-              fileobject = generated:[], a:file.name, href:locals.directory.replace(/\/$/,'')+'/'+file.name
-              extstr = file.name.match /(?:\.([^.]+))?\.([^.]+)$/
-              if extstr
-                ext = extstr[2]
-                if handlers[ext]?.chain
-                  fileobject.generated.push a:handlers[ext].chain, href:fileobject.href.replace /[^.]+$/, handlers[ext].chain
-                ext = extstr[1]
-                if !!ext
-                  if handlers[ext]?.chain
-                    fileobject.generated.push a:ext, href:fileobject.href.replace /\.[^.]+$/, ''
-                    fileobject.generated.push a:handlers[ext].chain, href:fileobject.href.replace /[^.]+\.[^.]+$/, handlers[ext].chain
-              if file.name.match /\./ then files.push fileobject else dirs.push fileobject
-            callback 0, mustache.render """
-            <ul>
-              {{#dirs}}
-              <li><a href="{{href}}">{{a}}</a></li>
-              {{/dirs}}
-              {{#files}}
-              <li>
-                <a href="{{href}}">{{a}}</a>
-                {{#generated}}
-                  [<a href="{{href}}">{{a}}</a>]
-                {{/generated}}
-              </li>
-              {{/files}}
-            </ul>
-            """, dirs: dirs, files: files
+      do -> for mypath in items.paths
+        for cb in hooks.pathserver
+          str = cb app, { mypath: mypath, myurl: myurl }
 
   # start the server
   server.listen program.port, ->
