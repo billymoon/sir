@@ -101,6 +101,34 @@ By default, livereload is enabled on the same port as the main server. This shou
 
 If you don't want the livereload feature enabled at all, then there is a `--no-livereload` flag
 
+### Multiple sources
+
+You can serve up from multiple locations, for example:
+
+    $ sir . vendor:~/lib/vendor
+
+This will serve from the current directory, except requests for `/vendor/myfile.txt` will be served from `~/lib/vendor`.
+
+You can also layer multiple sources into one directory...
+
+    $ sir . vendor:~/lib/vendor:~/other/vendor
+
+This will serve current directory, except paths starting `/vendor/` which will try to serve from `~/lib/vendor` and if the file is not found there, will be served from `~/other/vendor`, ultimately returning 404 if file is not found.
+
+### Proxy
+
+You can proxy requests based on url, for example...
+
+    $ sir . github:https://api.github.com/repos/billymoon/sir
+
+This will serve current directory, except for paths starting `/github/` which will be proxied to `https://api.github.com/repos/billymoon/sir` so that accessing...
+
+    http://localhost:8080/github/issues?state=closed
+
+... will proxy through the response from ...
+
+    https://api.github.com/repos/billymoon/sir/issues?state=closed
+
 ### Cache
 
 Useful for saving processed version of source files, for example, if you have `index.jade`, and `style.less` and want to save the html and css, add a `--cache backup` flag, and then visit `http://localhost:8080/index.html` in your browser. There should be a `index.html` and a `style.css` in the backup folder.
