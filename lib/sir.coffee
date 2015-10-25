@@ -44,23 +44,7 @@ module.exports = run: ->
       'cors'
       'cache'
       'logs'
-    ]
-    helper = require "./helpers/#{helper_name}"
-    helper app
-
-  ## TODO: make this a helper, avoiding livereload ordering problem
-  parse = require './parse'
-  served = parse app
-  for myurl, items of served
-    if items.proxy
-      proxymod = require './proxy'
-      proxymod app, mypath: items.proxy, myurl: myurl
-    else
-      do -> for mypath in items.paths
-        for cb in app.hooks.pathserver
-          cb mypath: mypath, myurl: myurl
-
-  for helper_name in [
+      'core' # main bootstrap, requires parse and proxy
       'livereload'
     ]
     helper = require "./helpers/#{helper_name}"
