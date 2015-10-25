@@ -5,7 +5,7 @@ module.exports = run: ->
   app =
     server: require('express')()
     program: require 'commander'
-    handlers: require './helpers/handlers' # pre-processor handlers
+    handlers: require './handlers' # pre-processor handlers
     hooks: # hooks for modules to attach to
       beforesend: []
       pathserver: []
@@ -35,7 +35,7 @@ module.exports = run: ->
     # .option('-f, --favicon <path>', 'serve the given favicon')
     .parse process.argv
 
-  for val in [
+  for helper_name in [
       'preprocess'
       'static'
       'mime'
@@ -47,14 +47,14 @@ module.exports = run: ->
       'livereload'
       'logs'
     ]
-    helper = require "./helpers/#{val}"
+    helper = require "./helpers/#{helper_name}"
     helper app
 
-  parse = require './helpers/parse'
+  parse = require './parse'
   served = parse app
   for myurl, items of served
     if items.proxy
-      proxymod = require './helpers/proxy'
+      proxymod = require './proxy'
       proxymod app, mypath: items.proxy, myurl: myurl
     else
       do -> for mypath in items.paths
