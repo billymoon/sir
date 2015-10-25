@@ -67,24 +67,27 @@ run = ->
   sources = if program.args.length then program.args else ['.']
   served = {}
   for source in sources
-    ## TODO: unify and simplify syntax for multiple doc sources, and proxy definitions
-    mypaths = source.split '::'
-    if mypaths and mypaths.length > 1
-      myurl = mypaths.shift()
-      served[myurl] = {proxy:mypaths.join('::')}
-    else
-      mypaths = source.split ':'
-      myurl = if mypaths.length > 1 then mypaths.shift() else ''
-      expandHomeDir = (mypath)->
-        homedir = process.env[if process.platform == 'win32' then 'USERPROFILE' else 'HOME']
-        return if !mypath then mypath
-        else if mypath == '~' then homedir
-        else if mypath.slice(0, 2) != '~/' then mypath
-        else path.join homedir, mypath.slice 2
-      do -> for mypath in mypaths
-        served[myurl] = served[myurl] or {paths:[],files:[]}
-        served[myurl].paths.push expandHomeDir mypath
-        served[myurl].files.push fs.readdirSync path.resolve expandHomeDir mypath
+    proxy_source = null
+    console.log source
+    source = source.replace /:(https?:\/\/.+)$/, (all, m1)-> console.log(m1); proxy_source = m1; ''
+    mypaths = source.split ':'
+    if mypaths[0]
+      if proxy_source
+        served[source] = proxy:proxy_source
+      else
+        mypaths = source.split ':'
+        myurl = if mypaths.length > 1 then mypaths.shift() else ''
+        ## TODO: move into general utility function
+        expandHomeDir = (mypath)->
+          homedir = process.env[if process.platform == 'win32' then 'USERPROFILE' else 'HOME']
+          return if !mypath then mypath
+          else if mypath == '~' then homedir
+          else if mypath.slice(0, 2) != '~/' then mypath
+          else path.join homedir, mypath.slice 2
+        do -> for mypath in mypaths
+          served[myurl] = served[myurl] or {paths:[],files:[]}
+          served[myurl].paths.push expandHomeDir mypath
+          served[myurl].files.push fs.readdirSync path.resolve expandHomeDir mypath
   for myurl, items of served
     if items.proxy
       proxyurl = ('/'+myurl).replace(/^\/+/,'/')
