@@ -2,9 +2,9 @@ fs = require 'fs'
 path = require 'path'
 mkdirp = require 'mkdirp'
 
-module.exports = (cache, server)->
+module.exports = (app, data)->
   # http://stackoverflow.com/a/19215370/665261
-  server.use (req, res, next)->
+  app.server.use (req, res, next)->
     oldWrite = res.write;
     oldEnd = res.end;
 
@@ -20,9 +20,9 @@ module.exports = (cache, server)->
       body = Buffer.concat chunks
 
       filepath = req.originalUrl
-      if cache && res.statusCode >= 200 && res.statusCode < 400
-        resolvedpath = path.resolve path.join cache, path.dirname filepath
-        filename = path.resolve path.join cache, filepath
+      if app.program.cache && res.statusCode >= 200 && res.statusCode < 400
+        resolvedpath = path.resolve path.join app.program.cache, path.dirname filepath
+        filename = path.resolve path.join app.program.cache, filepath
         if fs.existsSync(resolvedpath) && fs.lstatSync(resolvedpath).isFile()
           fs.renameSync resolvedpath, resolvedpath + '.tmp'
           mkdirp.sync resolvedpath

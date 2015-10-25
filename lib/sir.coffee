@@ -1,4 +1,4 @@
-run = ->
+module.exports = run: ->
 
   # core libs
   fs = require 'fs'
@@ -9,22 +9,23 @@ run = ->
   program = require 'commander'
 
   # options and usage
-  program.version(require('../package.json').version)
-  .usage('[options] <dir>')
-  .option('-p, --port <port>', 'specify the port [8080]', Number, 8080)
-  .option('-h, --hidden', 'enable hidden file serving')
-  .option('    --cache <cache-folder>', 'store copy of each served file in `cache` folder', String)
-  .option('    --no-livereload', 'disable livereload watching served directory (add `lr` to querystring of requested resource to inject client script)')
-  .option('    --no-logs', 'disable request logging')
-  .option('-f, --format <fmt>', 'specify the log format string (npmjs.com/package/morgan)', 'dev')
-  .option('    --compress', 'gzip or deflate the response')
-  .option('    --exec <cmd>', 'execute command on each request')
-  .option('    --no-cors', 'disable cross origin access serving')
-  ## TODO: consider re-implementing these features...
-  # .option('-i, --no-icons', 'disable icons')
-  # .option('-d, --no-dirs', 'disable directory serving')
-  # .option('-f, --favicon <path>', 'serve the given favicon')
-  .parse process.argv
+  program
+    .version require('../package.json').version
+    .usage '[options] <dir>'
+    .option '-p, --port <port>', 'specify the port [8080]', Number, 8080
+    .option '-h, --hidden', 'enable hidden file serving'
+    .option '    --cache <cache-folder>', 'store copy of each served file in `cache` folder', String
+    .option '    --no-livereload', 'disable livereload watching served directory (add `lr` to querystring of requested resource to inject client script)'
+    .option '    --no-logs', 'disable request logging'
+    .option '-f, --format <fmt>', 'specify the log format string (npmjs.com/package/morgan)', 'dev'
+    .option '    --compress', 'gzip or deflate the response'
+    .option '    --exec <cmd>', 'execute command on each request'
+    .option '    --no-cors', 'disable cross origin access serving'
+    ## TODO: consider re-implementing these features...
+    # .option('-i, --no-icons', 'disable icons')
+    # .option('-d, --no-dirs', 'disable directory serving')
+    # .option('-f, --favicon <path>', 'serve the given favicon')
+    .parse process.argv
 
   # hooks for modules to attach to
   hooks =
@@ -57,59 +58,34 @@ run = ->
     ]
     hooks.pathserver.push require "./helpers/#{val}"
 
-  for key, val of {
-      exec: program.exec
-      compress: program.compress
-      cors: program.cors
-      cache: program.cache
-      livereload: program.livereload
-      ## TODO: merge logs and format options
-      logs: program.logs && program.format
-    }
-    ## TODO: pass requirements as object (mostly only needed for livereload)
-    require("./helpers/#{key}")(val, server, hooks, sourcepath, handlers, mimes, program)
+  app =
+    server: server
+    program: program
+    handlers: handlers
+    hooks: hooks
+    mimes: mimes
 
-  sources = if program.args.length then program.args else ['.']
-  served = {}
-  for source in sources
-    proxy_source = null
-    source = source.replace /:(https?:\/\/.+)$/, (all, m1)-> console.log(m1); proxy_source = m1; ''
-    mypaths = source.split ':'
-    if mypaths[0]
-      if proxy_source
-        served[source] = proxy:proxy_source
-      else
-        mypaths = source.split ':'
-        myurl = if mypaths.length > 1 then mypaths.shift() else ''
-        ## TODO: move into general utility function
-        expandHomeDir = (mypath)->
-          homedir = process.env[if process.platform == 'win32' then 'USERPROFILE' else 'HOME']
-          return if !mypath then mypath
-          else if mypath == '~' then homedir
-          else if mypath.slice(0, 2) != '~/' then mypath
-          else path.join homedir, mypath.slice 2
-        do -> for mypath in mypaths
-          served[myurl] = served[myurl] or {paths:[],files:[]}
-          served[myurl].paths.push expandHomeDir mypath
-          served[myurl].files.push fs.readdirSync path.resolve expandHomeDir mypath
+  for val in [
+      'exec'
+      'compress'
+      'cors'
+      'cache'
+      'livereload'
+      'logs'
+    ]
+    require("./helpers/#{val}") app, {sourcepath:sourcepath}
+
+  parse = require './helpers/parse'
+  served = parse app
   for myurl, items of served
-    app =
-      server: server
-      program: program
-      handlers: handlers
-      hooks: hooks
-      mimes: mimes
     if items.proxy
       proxymod = require './helpers/proxy'
       proxymod app, { mypath: items.proxy, myurl: myurl }
     else
-      ## TODO: implement each middleware as helper, injected via hooks
       do -> for mypath in items.paths
         for cb in hooks.pathserver
-          str = cb app, { mypath: mypath, myurl: myurl }
+          cb app, { mypath: mypath, myurl: myurl }
 
   # start the server
   server.listen program.port, ->
     console.log 'serving %s on port %d', sourcepath, program.port
-
-module.exports = run: run
