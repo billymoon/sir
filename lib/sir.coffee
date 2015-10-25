@@ -1,15 +1,23 @@
 module.exports = run: ->
 
-  # core libs
-  fs = require 'fs'
   path = require 'path'
 
-  # vendor libs
-  express = require 'express'
-  program = require 'commander'
+  app =
+    server: require('express')()
+    program: require 'commander'
+    handlers: require './helpers/handlers' # pre-processor handlers
+    hooks: # hooks for modules to attach to
+      beforesend: []
+      pathserver: []
+    mimes:
+      html: 'text/html'
+      css: 'text/css'
+      js: 'application/javascript'
+      xml: 'text/xml'
+      xsl: 'text/xsl'
 
   # options and usage
-  program
+  app.program
     .version require('../package.json').version
     .usage '[options] <dir>'
     .option '-p, --port <port>', 'specify the port [8080]', Number, 8080
@@ -26,32 +34,6 @@ module.exports = run: ->
     # .option('-d, --no-dirs', 'disable directory serving')
     # .option('-f, --favicon <path>', 'serve the given favicon')
     .parse process.argv
-
-  # hooks for modules to attach to
-  hooks =
-    beforesend: []
-    pathserver: []
-
-  # general config
-  mimes =
-    html: 'text/html'
-    css: 'text/css'
-    js: 'application/javascript'
-    xml: 'text/xml'
-    xsl: 'text/xsl'
-
-  # pre-processor config
-  handlers = require "./helpers/handlers"
-
-  # setup the server
-  server = express()
-
-  app =
-    server: server
-    program: program
-    handlers: handlers
-    hooks: hooks
-    mimes: mimes
 
   for val in [
       'preprocess'
@@ -76,9 +58,9 @@ module.exports = run: ->
       proxymod app, mypath: items.proxy, myurl: myurl
     else
       do -> for mypath in items.paths
-        for cb in hooks.pathserver
+        for cb in app.hooks.pathserver
           cb mypath: mypath, myurl: myurl
 
   # start the server
-  server.listen program.port, ->
-    console.log 'serving %s on port %d', path.resolve(app.program.args[0] or process.cwd()), program.port
+  app.server.listen app.program.port, ->
+    console.log 'serving %s on port %d', path.resolve(app.program.args[0] or process.cwd()), app.program.port
