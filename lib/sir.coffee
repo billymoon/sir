@@ -1,33 +1,19 @@
 run = ->
 
-  url = require 'url'
+  # core libs
   fs = require 'fs'
   path = require 'path'
-  exec = require('child_process').exec
 
-  mkdirp = require 'mkdirp'
-  program = require 'commander'
+  # vendor libs
   express = require 'express'
   serveIndex = require 'serve-index'
-  compression = require 'compression'
-  morgan = require 'morgan'
-  coffee = require 'coffee-script'
-  marked = require 'marked'
-  stylus = require 'stylus'
-  jade = require 'jade'
-  less = require 'less'
-  sass = require 'node-sass'
-  slm = require 'slm'
-  mustache = require 'mustache'
+  proxy = require 'proxy-middleware'
+  program = require 'commander'
   _ = require 'lodash'
   illiterate = require 'illiterate'
-  beautify = require 'js-beautify'
-  cheerio = require 'cheerio'
-  tinylr = require 'tiny-lr'
-  request = require 'request'
-  proxy = require 'proxy-middleware'
-  watchr = require 'watchr'
+  mustache = require 'mustache'
 
+  # options and usage
   program.version(require('../package.json').version)
   .usage('[options] <dir>')
   .option('-p, --port <port>', 'specify the port [8080]', Number, 8080)
@@ -39,13 +25,17 @@ run = ->
   .option('    --compress', 'gzip or deflate the response')
   .option('    --exec <cmd>', 'execute command on each request')
   .option('    --no-cors', 'disable cross origin access serving')
-  ## TODO: --fetch lib,lib,lib
   ## TODO: consider re-implementing these features...
   # .option('-i, --no-icons', 'disable icons')
   # .option('-d, --no-dirs', 'disable directory serving')
   # .option('-f, --favicon <path>', 'serve the given favicon')
   .parse process.argv
 
+  # hooks for modules to attach to
+  hooks =
+    beforesend: []
+
+  # general config
   mimes =
     html: 'text/html'
     css: 'text/css'
@@ -53,125 +43,31 @@ run = ->
     xml: 'text/xml'
     xsl: 'text/xsl'
 
-  handlers =
-    less:
-      process: (str)-> css=null; less.render(str, (e, compiled)-> css=compiled); css
-      chain: 'css'
-    stylus:
-      process: (str)-> stylus.render str
-      chain: 'css'
-    scss:
-      process: (str)-> sass.renderSync(data: str).css
-      chain: 'css'
-    sass:
-      process: (str)-> sass.renderSync(data: str, indentedSyntax: true).css
-      chain: 'css'
-    coffee:
-      process: (str)-> coffee.compile str, bare:true
-      chain: 'js'
-    markdown:
-      process: (str)-> beautify.html marked str
-      chain: 'html'
-    jade:
-      process: (str, file) -> beautify.html jade.compile(str, filename: file)()
-      chain: 'html'
-    slim:
-      process: (str) -> beautify.html slm.render(str), indent_size: 4
-      chain: 'html'
-    # TODO: better way to handle xml and xsl in slim - perhaps double barrel name?
-    xmls:
-      process: (str) -> beautify.html slm.render(str), indent_size: 4
-      chain: 'xml'
-    xslm:
-      process: (str) -> beautify.html slm.render(str), indent_size: 4
-      chain: 'xsl'
+  # pre-processor config
+  handlers = require "./helpers/handlers"
 
-  handlers.md = handlers.markdown
-  handlers.slm = handlers.slim
-  handlers.styl = handlers.stylus
-
-  slm.template.registerEmbeddedFunction 'markdown', handlers.markdown.process
-
-  slm.template.registerEmbeddedFunction 'coffee', (str) ->
-    '<script>' + handlers.coffee.process(str) + '</script>'
-
-  slm.template.registerEmbeddedFunction 'less', (str) ->
-    '<style type="text/css">' + handlers.less.process(str) + '</style>'
-
-  slm.template.registerEmbeddedFunction 'stylus', (str) ->
-    '<style type="text/css">' + handlers.stylus.process(str) + '</style>'
-
-  slm.template.registerEmbeddedFunction 'scss', (str) ->
-    '<style type="text/css">' + handlers.scss.process(str) + '</style>'
-
-  slm.template.registerEmbeddedFunction 'sass', (str) ->
-    '<style type="text/css">' + handlers.sass.process(str) + '</style>'
-
-  sourcepath = path.resolve program.args[0] or '.'
+  # default source path is cwd
+  sourcepath = path.resolve program.args[0] or process.cwd()
 
   # setup the server
   server = express()
 
-  # exec command
-  if program.exec
-    server.use (req, res, next) ->
-      exec program.exec, next
-
-  # compression
-  if program.compress
-    server.use compression threshold: 0
-
-  # CORS access for files
-  if program.cors
-    server.use (req, res, next) ->
-      res.setHeader 'Access-Control-Allow-Origin', '*'
-      res.setHeader 'Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS'
-      res.setHeader 'Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With, Accept, x-csrf-token, origin'
-      if req.method == 'OPTIONS'
-        endStore res
-      next()
-
-  # request logging
-  if program.logs
-    server.use morgan program.format
-
-  # http://stackoverflow.com/a/19215370/665261
-  server.use (req, res, next)->
-    oldWrite = res.write;
-    oldEnd = res.end;
-
-    chunks = [];
-
-    res.write = (chunk)->
-      chunks.push chunk
-      oldWrite.apply res, arguments
-
-    res.end = (chunk)->
-      if chunk then chunks.push chunk
-
-      body = Buffer.concat chunks
-
-      filepath = req.originalUrl
-      if program.cache && res.statusCode >= 200 && res.statusCode < 400
-        resolvedpath = path.resolve path.join program.cache, path.dirname filepath
-        filename = path.resolve path.join program.cache, filepath
-        if fs.existsSync(resolvedpath) && fs.lstatSync(resolvedpath).isFile()
-          fs.renameSync resolvedpath, resolvedpath + '.tmp'
-          mkdirp.sync resolvedpath
-          fs.renameSync resolvedpath + '.tmp', path.join resolvedpath, 'auto-index.html'
-        else if fs.existsSync(filename) && fs.lstatSync(filename).isDirectory()
-          filename = path.join filename, 'auto-index.html'
-        else
-          mkdirp.sync resolvedpath
-        fs.writeFileSync filename, body
-
-      oldEnd.apply res, arguments
-
-    next()
+  for key, val of {
+      exec: program.exec
+      compress: program.compress
+      cors: program.cors
+      cache: program.cache
+      livereload: program.livereload
+      ## TODO: merge logs and format options
+      logs: program.logs && program.format
+    }
+    ## TODO: pass requirements as object (mostly only needed for livereload)
+    require("./helpers/#{key}")(val, server, hooks, sourcepath, handlers, mimes, program)
 
   sources = if program.args.length then program.args else ['.']
   served = {}
   for source in sources
+    ## TODO: unify and simplify syntax for multiple doc sources, and proxy definitions
     mypaths = source.split '::'
     if mypaths and mypaths.length > 1
       myurl = mypaths.shift()
@@ -179,17 +75,24 @@ run = ->
     else
       mypaths = source.split ':'
       myurl = if mypaths.length > 1 then mypaths.shift() else ''
+      expandHomeDir = (mypath)->
+        homedir = process.env[if process.platform == 'win32' then 'USERPROFILE' else 'HOME']
+        return if !mypath then mypath
+        else if mypath == '~' then homedir
+        else if mypath.slice(0, 2) != '~/' then mypath
+        else path.join homedir, mypath.slice 2
       do -> for mypath in mypaths
         served[myurl] = served[myurl] or {paths:[],files:[]}
-        served[myurl].paths.push mypath
-        served[myurl].files.push fs.readdirSync path.resolve mypath
+        served[myurl].paths.push expandHomeDir mypath
+        served[myurl].files.push fs.readdirSync path.resolve expandHomeDir mypath
   for myurl, items of served
     if items.proxy
       proxyurl = ('/'+myurl).replace(/^\/+/,'/')
       server.use proxyurl, proxy items.proxy
       console.log 'proxying ' + proxyurl + ' to ' + items.proxy
     else
-      do -> for mypath in items.paths
+      ## TODO: implement each middleware as helper, injected via hooks
+      do -> for mypath in items.paths      
         server.use (req, res, next)->
           fallthrough = true
           _.each _.keys(handlers), (item, index)->
@@ -214,17 +117,9 @@ run = ->
               str = fs.readFileSync(path.resolve currentpath).toString 'UTF-8'
               if !!literate then str = illiterate str
               if not raw then str = handlers[item].process str, path.resolve currentpath
-              ## process lr to add livereload script to page
-              if program.livereload and req.query.lr?
-                lr_tag = """
-                <script src="/livereload.js?snipver=1"></script>\n
-                """
-                $ = cheerio.load str
-                if $('script').length
-                  $('script').before lr_tag
-                  str = $.html()
-                else
-                  str = lr_tag + str
+              # process str with beforesend hooks
+              for cb in hooks.beforesend
+                str = cb str, req, program
               if !!literate and !!raw
                 part = path.extname(replaced_path).replace(/^\./, '')
                 ## TODO: perhaps use filetype for mime instead of plain ... #{part or 'plain'}"
@@ -277,21 +172,6 @@ run = ->
               {{/files}}
             </ul>
             """, dirs: dirs, files: files
-
-  # livereload (add ?lr to url to activate - watches served paths)
-  if program.livereload
-    server.use(tinylr.middleware({ app: server }))
-    watchr.watch
-      path: sourcepath
-      catchupDelay: 200
-      listeners:
-        change: (type, filename)-> # additional arguments: currentStat and originalStat
-          m = filename.match /\.([^.]+)$/
-          extension = m?[1]
-          if !!extension and (handlers[extension] or mimes[extension])
-            served_filename = filename.replace RegExp("#{m[1]}$"), handlers[extension]?.chain or extension
-            request "http://127.0.0.1:#{program.port}/changed?files="+served_filename, (error, response, body)->
-              console.log 'livereloaded due to change: ' + filename
 
   # start the server
   server.listen program.port, ->
