@@ -1,3 +1,13 @@
+1.2.5 / 2015-10-25
+
+  * modularize for maintainablity
+  * simplify argument syntax
+
+1.2.4 / 2015-10-25
+
+  * remove vendor install features (shabby, and out of scope)
+  * update docs
+
 1.2.3 / 2015-10-24
 
   * use watchr to trigger livereload
