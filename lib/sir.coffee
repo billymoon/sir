@@ -27,6 +27,7 @@ module.exports = run: ->
     .option '    --no-livereload', 'disable livereload watching served directory (add `lr` to querystring of requested resource to inject client script)'
     .option '    --no-logs', 'disable request logging'
     .option '-f, --format <fmt>', 'specify the log format string (npmjs.com/package/morgan)', 'dev'
+    .option '    --minify', 'minify code before serving'
     .option '    --compress', 'gzip or deflate the response'
     .option '    --exec <cmd>', 'execute command on each request'
     .option '    --no-cors', 'disable cross origin access serving'
@@ -36,6 +37,7 @@ module.exports = run: ->
     .parse process.argv
 
   for helper_name in [
+      'minify'
       'preprocess'
       'static'
       'mime'
