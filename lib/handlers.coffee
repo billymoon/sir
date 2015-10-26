@@ -12,7 +12,7 @@ mustache = require 'mustache'
 
 handlers =
   less:
-    process: (str)-> css=null; less.render(str, (e, compiled)-> css=compiled); css
+    process: (str)-> out=null; less.render(str, (e, compiled)-> out=compiled); out.css
     chain: 'css'
   stylus:
     process: (str)-> stylus.render str

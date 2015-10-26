@@ -36,7 +36,7 @@ module.exports = (app)->
             part = path.extname(replaced_path).replace(/^\./, '')
             ## TODO: perhaps use filetype for mime instead of plain ... #{part or 'plain'}"
             literate_mime = if app.mimes[part] then app.mimes[part] else "text/plain"
-          res.setHeader 'Content-Type', if !!literate_mime then "#{literate_mime}; charset=utf-8" else if !!raw then "text/#{item}; charset=utf-8" else "#{app.mimes[app.handlers[item]?.chain]}; charset=utf-8"
-          res.setHeader 'Content-Length', str.length
+          res.set 'Content-Type', if !!literate_mime then "#{literate_mime}; charset=utf-8" else if !!raw then "text/#{item}; charset=utf-8" else "#{app.mimes[app.handlers[item]?.chain]}; charset=utf-8"
+          res.set 'Content-Length', str.length
           res.end str
       next() if fallthrough
