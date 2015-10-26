@@ -23,6 +23,7 @@ module.exports = (app)->
       str
 
     app.server.use tinylr.middleware app: app.server
+    
     watchr.watch
       path: path.resolve app.program.args[0] or process.cwd()
       catchupDelay: 200

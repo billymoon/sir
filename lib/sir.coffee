@@ -2,6 +2,7 @@ module.exports = run: ->
 
   path = require 'path'
 
+  # define main app config
   app =
     server: require('express')()
     program: require 'commander'
