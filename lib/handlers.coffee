@@ -35,13 +35,6 @@ handlers =
   slim:
     process: (str) -> beautify.html slm.render(str), indent_size: 4
     chain: 'html'
-  ## TODO: better way to handle xml and xsl in slim - perhaps double barrel name?
-  xmls:
-    process: (str) -> beautify.html slm.render(str), indent_size: 4
-    chain: 'xml'
-  xslm:
-    process: (str) -> beautify.html slm.render(str), indent_size: 4
-    chain: 'xsl'
 
 handlers.md = handlers.markdown
 handlers.slm = handlers.slim
