@@ -6,7 +6,6 @@ module.exports = run: ->
   app =
     server: require('express')()
     program: require 'commander'
-    handlers: require './handlers' # pre-processor handlers
     hooks: # hooks for modules to attach to
       beforesend: []
       pathserver: []
@@ -31,10 +30,14 @@ module.exports = run: ->
     .option '    --compress', 'gzip or deflate the response'
     .option '    --exec <cmd>', 'execute command on each request'
     .option '    --no-cors', 'disable cross origin access serving'
+    .option '    --babel', 'pass all js through babel to convert to more js :)'
     ## TODO: consider re-implementing these features...
     # .option('-d, --no-dirs', 'disable directory serving')
     # .option('-f, --favicon <path>', 'serve the given favicon')
     .parse process.argv
+
+  app.handlers = require('./handlers')(app.program) # pre-processor handlers
+
 
   for helper_name in [
       'minify'
