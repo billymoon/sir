@@ -1,6 +1,5 @@
 path = require 'path'
 tinylr = require 'tiny-lr'
-watchr = require 'watchr'
 cheerio = require 'cheerio'
 request = require 'request'
 
@@ -24,14 +23,14 @@ module.exports = (app)->
 
     app.server.use tinylr.middleware app: app.server
     
-    watchr.watch
-      path: path.resolve app.program.args[0] or process.cwd()
-      catchupDelay: 200
-      listeners:
-        change: (type, filename)-> # additional arguments: currentStat and originalStat
-          m = filename.match /\.([^.]+)$/
-          extension = m?[1]
-          if !!extension and (app.handlers[extension] or app.mimes[extension])
-            served_filename = filename.replace RegExp("#{m[1]}$"), app.handlers[extension]?.chain or extension
-            request "http://127.0.0.1:#{app.program.port}/changed?files="+served_filename, (error, response, body)->
-              console.log 'livereloaded due to change: ' + filename
+    # would have preferred to use https://www.npmjs.com/package/watchr but breaks on node v0.10.3
+    # this method has serious caveats: https://nodejs.org/api/fs.html#fs_caveats
+    # The recursive option is only supported on OS X and Windows.
+    # Should probably use fs.watchFile as fallback method
+    require('fs').watch path.resolve(app.program.args[0] or process.cwd()), (e, filename)->
+      m = filename.match /\.([^.]+)$/
+      extension = m?[1]
+      if !!extension and (app.handlers[extension] or app.mimes[extension])
+        served_filename = filename.replace RegExp("#{m[1]}$"), app.handlers[extension]?.chain or extension
+        request "http://127.0.0.1:#{app.program.port}/changed?files="+served_filename, (error, response, body)->
+          console.log 'livereloaded due to change: ' + filename
