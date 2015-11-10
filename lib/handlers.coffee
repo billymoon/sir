@@ -17,7 +17,7 @@ module.exports = (program)->
       process: (str)-> if program.babel then require('babel-core').transform(str).code else str
       chain: 'js'
     less:
-      process: (str)-> out=null; less.render(str, (e, compiled)-> out=compiled); out.css
+      process: (str, file)-> out=null; less.render(str, {filename:file, syncImport:true}, (e, compiled)-> out=compiled); out.css
       chain: 'css'
     stylus:
       process: (str)-> stylus.render str
