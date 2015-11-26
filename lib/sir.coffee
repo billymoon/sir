@@ -1,3 +1,5 @@
+# prioritise natural files over derived, and indicate conflict in list
+# robust watcher
 module.exports = run: ->
 
   path = require 'path'
@@ -37,7 +39,6 @@ module.exports = run: ->
     .parse process.argv
 
   app.handlers = require('./handlers')(app.program) # pre-processor handlers
-
 
   for helper_name in [
       'minify'

@@ -2,6 +2,7 @@ path = require 'path'
 tinylr = require 'tiny-lr'
 cheerio = require 'cheerio'
 request = require 'request'
+watch = require 'node-watch'
 
 module.exports = (app)->
   # livereload (add ?lr to url to activate - watches served paths)
@@ -15,7 +16,7 @@ module.exports = (app)->
         """
         $ = cheerio.load str
         if $('script').length
-          $('script').before lr_tag
+          $('script').eq(0).before lr_tag
           str = $.html()
         else
           str = lr_tag + str
@@ -27,7 +28,7 @@ module.exports = (app)->
     # this method has serious caveats: https://nodejs.org/api/fs.html#fs_caveats
     # The recursive option is only supported on OS X and Windows.
     # Should probably use fs.watchFile as fallback method
-    require('fs').watch path.resolve(app.program.args[0] or process.cwd()), (e, filename)->
+    watch path.resolve(app.program.args[0] or process.cwd()), (filename)->
       m = filename.match /\.([^.]+)$/
       extension = m?[1]
       if !!extension and (app.handlers[extension] or app.mimes[extension])
