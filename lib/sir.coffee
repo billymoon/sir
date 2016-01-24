@@ -15,6 +15,7 @@ module.exports = run: ->
       html: 'text/html'
       css: 'text/css'
       js: 'application/javascript'
+      json: 'application/json'
       xml: 'text/xml'
       xsl: 'text/xsl'
 

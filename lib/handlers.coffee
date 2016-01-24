@@ -10,12 +10,19 @@ module.exports = (program)->
   less = require 'less'
   sass = require 'node-sass'
   slm = require 'slm'
+  xml2json = require 'xml2json'
 
   handlers =
     js:
       # only require babel if it is going to be used - takes about 1 second to load!
       process: (str)-> if program.babel then require('babel-core').transform(str).code else str
       chain: 'js'
+    xml:
+      process: (str)-> JSON.stringify JSON.parse(xml2json.toJson str), null, 4
+      chain: 'json'
+    svg:
+      process: (str)-> JSON.stringify JSON.parse(xml2json.toJson str), null, 4
+      chain: 'json'
     less:
       process: (str, file)-> out=null; less.render(str, {filename:file, syncImport:true}, (e, compiled)-> out=compiled); out.css
       chain: 'css'
