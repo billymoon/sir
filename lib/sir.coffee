@@ -25,7 +25,7 @@ module.exports = run: ->
     .usage '[options] <dir>'
     .option '-p, --port <port>', 'specify the port [8080]', Number, 8080
     .option '-h, --hidden', 'enable hidden file serving'
-    .option '    --cache <cache-folder>', 'store copy of each served file in `cache` folder', String
+    .option '    --backup <backup-folder>', 'store copy of each served file in `backup` folder', String
     .option '    --no-livereload', 'disable livereload watching served directory (add `lr` to querystring of requested resource to inject client script)'
     .option '    --no-logs', 'disable request logging'
     .option '-f, --format <fmt>', 'specify the log format string (npmjs.com/package/morgan)', 'dev'
@@ -50,7 +50,7 @@ module.exports = run: ->
       'exec'
       'compress'
       'cors'
-      'cache'
+      'backup'
       'logs'
       'core' # main bootstrap, requires parse and proxy
       'livereload'

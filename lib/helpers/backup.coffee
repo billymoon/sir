@@ -20,9 +20,9 @@ module.exports = (app)->
       body = Buffer.concat chunks
 
       filepath = req.originalUrl
-      if app.program.cache && res.statusCode >= 200 && res.statusCode < 400
-        resolvedpath = path.resolve path.join app.program.cache, path.dirname filepath
-        filename = path.resolve path.join app.program.cache, filepath
+      if app.program.backup && res.statusCode >= 200 && res.statusCode < 400
+        resolvedpath = path.resolve path.join app.program.backup, path.dirname filepath
+        filename = path.resolve path.join app.program.backup, filepath
         if fs.existsSync(resolvedpath) && fs.lstatSync(resolvedpath).isFile()
           fs.renameSync resolvedpath, resolvedpath + '.tmp'
           mkdirp.sync resolvedpath
