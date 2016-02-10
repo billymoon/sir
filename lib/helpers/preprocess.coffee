@@ -16,13 +16,10 @@ module.exports = (app)->
         literate_compilable_path = !!m and "#{m[1]}.#{item}.md"
         literate = null
         raw = null
-        ## TODO: make this conditional a bit nicer
+        checkpath = (path_to_check)-> fs.existsSync path.resolve path.join data.mypath, path_to_check
         if !!fallthrough and (
-            (fs.existsSync(path.resolve(path.join(data.mypath,literate_path))) and literate = true and raw = true) or !!m and (
-              fs.existsSync(path.resolve(path.join(data.mypath,compilable_path))) or (
-                fs.existsSync(path.resolve(path.join(data.mypath,literate_compilable_path))) and literate = true
-              )
-            )
+            (checkpath(literate_path) and literate = true and raw = true) or
+            !!m and (checkpath(compilable_path) or (checkpath(literate_compilable_path) and literate = true))
           )
           fallthrough = false
           currentpath = if !!raw then literate_path else if literate then literate_compilable_path else compilable_path
