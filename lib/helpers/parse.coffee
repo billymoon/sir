@@ -11,6 +11,9 @@ expandHomeDir = (mypath)->
 module.exports = (app)->
   served = {}
   sources = if app.program.args.length then app.program.args else ['.']
+  # TODO: perhaps better test required to see if there is a folder specified to serve
+  if !sources.reduce ((memo,item)-> memo = true if !/:/.test item; return memo), false
+    sources.push '.'
   for source in sources
     proxy_source = null
     source = source.replace /:(https?:\/\/.+)$/, (all, m1)-> proxy_source = m1; ''
