@@ -18,7 +18,7 @@ module.exports = (app)->
       if chunk then chunks.push chunk
 
       # TODO: figure out why chunks are sometimes string and sometimes buffer
-      if typeof chunk == 'string'
+      if typeof chunks[0] == 'string'
         body = chunks.join ''
       else
         body = Buffer.concat chunks

@@ -15,7 +15,8 @@ module.exports = (program)->
   handlers =
     js:
       # only require babel if it is going to be used - takes about 1 second to load!
-      process: (str)-> if program.babel then require('babel-core').transform(str).code else str
+      process: (str)->
+        if program.babel then require('babel-core').transform(str, {presets:['es2015']}).code else str
       chain: 'js'
     xml:
       process: (str)-> JSON.stringify JSON.parse(xml2json.toJson str), null, 4
