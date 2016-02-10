@@ -17,7 +17,11 @@ module.exports = (app)->
     res.end = (chunk)->
       if chunk then chunks.push chunk
 
-      body = Buffer.concat chunks
+      # TODO: figure out why chunks are sometimes string and sometimes buffer
+      if typeof chunk == 'string'
+        body = chunks.join ''
+      else
+        body = Buffer.concat chunks
 
       filepath = req.originalUrl
       if app.program.cache && res.statusCode >= 200 && res.statusCode < 400
