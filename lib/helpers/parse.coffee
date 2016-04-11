@@ -27,4 +27,6 @@ module.exports = (app)->
           served[myurl] = served[myurl] or {paths:[],files:[]}
           served[myurl].paths.push expandHomeDir mypath
           served[myurl].files.push fs.readdirSync path.resolve expandHomeDir mypath
+  if app.program.npm
+    served.npm = proxy: 'https://npmcdn.com'
   served
