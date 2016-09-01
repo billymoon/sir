@@ -117,7 +117,7 @@ This will serve current directory, except paths starting `/vendor/` which will t
 
 ### Proxy
 
-By default, requests to `/npm/<library>` are proxied to `https://npmcdn.com/<library>` making it easy to load dependencies via the local server so for example `http://localhost:8080/npm/moment` will load moment js from npm-cdn. This can be switched off with the `no-npm` flag.
+By default, requests to `/npm/<library>` are proxied to `https://unpkg.com/<library>` making it easy to load dependencies via the local server so for example `http://localhost:8080/npm/moment` will load moment js from npm-cdn. This can be switched off with the `no-npm` flag.
 
 You can proxy requests based on url, for example...
 
