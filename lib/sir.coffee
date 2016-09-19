@@ -24,7 +24,8 @@ module.exports = run: ->
     .version require('../package.json').version
     .usage '[options] <dir>'
     .option '-p, --port <port>', 'specify the port [8080]', Number, 8080
-    .option '    --no-npm', 'disable proxying /npm/<library> to npmcdn.com/<library>'
+    .option '    --npm', 'proxy /npm/<library> to npmcdn.com/<library>'
+    .option '    --jsdelivr', 'proxy /jsdelivr/<library> to cdn.jsdelivr.net/<library>'
     .option '-h, --hidden', 'enable hidden file serving'
     .option '    --backup <backup-folder>', 'store copy of each served file in `backup` folder', String
     .option '    --no-livereload', 'disable livereload watching served directory (add `lr` to querystring of requested resource to inject client script)'
