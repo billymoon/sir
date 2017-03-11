@@ -1,6 +1,7 @@
 fs = require 'fs'
 path = require 'path'
 mkdirp = require 'mkdirp'
+zlib = require 'zlib'
 
 module.exports = (app)->
   # http://stackoverflow.com/a/19215370/665261
@@ -15,6 +16,7 @@ module.exports = (app)->
       oldWrite.apply res, arguments
 
     res.end = (chunk)->
+
       if chunk then chunks.push chunk
 
       # TODO: figure out why chunks are sometimes string and sometimes buffer
@@ -35,6 +37,11 @@ module.exports = (app)->
           filename = path.join filename, 'auto-index.html'
         else
           mkdirp.sync resolvedpath
+
+        # if body is gzipped, unzip before saving to filesystem
+        if res._headers['content-encoding'] == 'gzip'
+          body = zlib.gunzipSync body
+
         fs.writeFileSync filename, body
 
       oldEnd.apply res, arguments

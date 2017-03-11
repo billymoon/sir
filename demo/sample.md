@@ -10,3 +10,6 @@ And some demo code...
     sq = (x)-> x * x
 
 And [this](http://example.com/) is a hyperlink.
+
+<script src="https://cdn.jsdelivr.net/g/jquery,momentjs,chance"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/g/bootswatch(darkly/bootstrap.css)">

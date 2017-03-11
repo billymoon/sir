@@ -60,6 +60,19 @@ module.exports = run: ->
     helper = require "./helpers/#{helper_name}"
     helper app
 
+  startServer = (port, cb)->
+    try
+      console.log 'going to try %s', port
+      app.server.listen app.program.port, ->
+        console.log 'serving %s on port %d', path.resolve(app.program.args[0] or process.cwd()), app.program.port
+      app.server.on 'error', (err)->
+        console.log 'cool'
+      # app.server.once 'close', ()->
+      #   cb port
+      #   app.server.close()
+    catch
+      console.log 'going to enter loop %s', port + 1
+      startServer port + 1, cb
+
   # start the server
-  app.server.listen app.program.port, ->
-    console.log 'serving %s on port %d', path.resolve(app.program.args[0] or process.cwd()), app.program.port
+  startServer 8080

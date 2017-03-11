@@ -23,17 +23,20 @@
 
     Options:
 
-      -h, --help                  output usage information
-      -V, --version               output the version number
-      -p, --port <port>           specify the port [8080]
-      -h, --hidden                enable hidden file serving
-          --cache <cache-folder>  store copy of each served file in `cache` folder
-          --no-livereload         disable livereload watching served directory (add `lr` to querystring of requested resource to inject client script)
-          --no-logs               disable request logging
-      -f, --format <fmt>          specify the log format string (npmjs.com/package/morgan)
-          --compress              gzip or deflate the response
-          --exec <cmd>            execute command on each request
-          --no-cors               disable cross origin access serving
+      -V, --version                   output the version number
+      -p, --port <port>               specify the port [8080]
+          --npm                       proxy /npm/<library> to npmcdn.com/<library>
+          --jsdelivr                  proxy /jsdelivr/<library> to cdn.jsdelivr.net/<library>
+      -h, --hidden                    enable hidden file serving
+          --backup <backup-folder>    store copy of each served file in `backup` folder
+          --no-livereload             disable livereload watching served directory (add `lr` to querystring of requested resource to inject client script)
+          --no-logs                   disable request logging
+      -f, --format <fmt>              specify the log format string (npmjs.com/package/morgan)
+          --minify                    minify code before serving
+          --compress                  gzip or deflate the response
+          --exec <cmd>                execute command on each request
+          --no-cors                   disable cross origin access serving
+          --babel                     pass all js through babel to convert to more js :)
 
 ## Examples
 
