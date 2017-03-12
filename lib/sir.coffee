@@ -26,6 +26,7 @@ module.exports = run: ->
     .option '-p, --port <port>', 'specify the port [8080]', Number, 8080
     .option '    --npm', 'proxy /npm/<library> to npmcdn.com/<library>'
     .option '    --jsdelivr', 'proxy /jsdelivr/<library> to cdn.jsdelivr.net/<library>'
+    .option '-s, --swagger <swagger-config-file>', 'enable swagger ui (/swagger) and swagger editor (/swagger/edit)', String
     .option '-h, --hidden', 'enable hidden file serving'
     .option '    --backup <backup-folder>', 'store copy of each served file in `backup` folder', String
     .option '    --no-livereload', 'disable livereload watching served directory (add `lr` to querystring of requested resource to inject client script)'
@@ -44,6 +45,7 @@ module.exports = run: ->
   app.handlers = require('./handlers')(app.program) # pre-processor handlers
 
   for helper_name in [
+      'swagger'
       'minify'
       'preprocess'
       'static'

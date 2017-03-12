@@ -2314,6 +2314,14 @@ supports-color@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/supports-color/-/supports-color-2.0.0.tgz#535d045ce6b6363fa40117084629995e9df324c7"
 
+swagger-editor@^2.10.5:
+  version "2.10.5"
+  resolved "https://registry.yarnpkg.com/swagger-editor/-/swagger-editor-2.10.5.tgz#a4316ccb0d40a77d30dadf91f0f4db7e475f948a"
+
+swagger-ui@^2.2.10:
+  version "2.2.10"
+  resolved "https://registry.yarnpkg.com/swagger-ui/-/swagger-ui-2.2.10.tgz#b25e7a21664e5d90bf391db30db08de41e852d7b"
+
 "symbol-tree@>= 3.1.0 < 4.0.0":
   version "3.2.2"
   resolved "https://registry.yarnpkg.com/symbol-tree/-/symbol-tree-3.2.2.tgz#ae27db38f660a7ae2e1c3b7d1bc290819b8519e6"
