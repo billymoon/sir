@@ -2,7 +2,7 @@
 
 ## The polite development server
 
-- serves as plain or pre-processed on-the-fly: less, sass/scss, stylus, markdown, slim
+- serves as plain or pre-processed on-the-fly: less, stylus, markdown, slim
 - livereload
 - multiple and aliased server roots
 - path based proxy (useful to proxy to api server, or assets from live site)
@@ -58,7 +58,7 @@ Make the same request as if the file had already been compiled, and was being se
     <h2 id="the-polite-development-server">The polite development server</h2>
     ...
 
-This also works for sass, less, etc...
+This also works for stylus, less, etc...
 
 ### Requesting the directory listing:
 

@@ -6,7 +6,6 @@ module.exports = (program)->
   marked = require 'marked'
   stylus = require 'stylus'
   less = require 'less'
-  sass = require 'node-sass'
   slm = require 'slm'
 
   handlers =
@@ -20,12 +19,6 @@ module.exports = (program)->
       chain: 'css'
     stylus:
       process: (str)-> stylus.render str
-      chain: 'css'
-    scss:
-      process: (str)-> sass.renderSync(data: str).css
-      chain: 'css'
-    sass:
-      process: (str)-> sass.renderSync(data: str, indentedSyntax: true).css
       chain: 'css'
     markdown:
       process: (str)-> beautify.html marked str
@@ -45,11 +38,5 @@ module.exports = (program)->
 
   slm.template.registerEmbeddedFunction 'stylus', (str) ->
     '<style type="text/css">' + handlers.stylus.process(str) + '</style>'
-
-  slm.template.registerEmbeddedFunction 'scss', (str) ->
-    '<style type="text/css">' + handlers.scss.process(str) + '</style>'
-
-  slm.template.registerEmbeddedFunction 'sass', (str) ->
-    '<style type="text/css">' + handlers.sass.process(str) + '</style>'
 
   handlers
