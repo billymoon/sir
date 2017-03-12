@@ -7,8 +7,9 @@ module.exports = (app)->
     if fs.lstatSync(swaggerFile).isFile()
       swaggerDir = path.dirname swaggerFile
       swaggerFiles = fs.readdirSync swaggerDir
-      app.program.args.push "swagger/edit/#{swaggerDir}:#{swaggerDir}"
+      app.program.args.push 'swagger:node_modules/swagger-ui/dist'
       app.program.args.push 'swagger/edit:node_modules/swagger-editor'
+      app.program.args.push "swagger/edit/#{swaggerDir}:#{swaggerDir}"
       # replace default config (originally: node_modules/swagger-editor/config/defaults.json)
       app.server.get '/swagger', (req, res, next)->
         if !req.query.url
