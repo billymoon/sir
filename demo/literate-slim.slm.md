@@ -6,6 +6,9 @@ This is both markdown, and javascript in one file!
     html
       head
         title cool
+      body
+        h1 just a sample page
+        p lorem etc...
 
 Set some basic styles using stylus...
 
@@ -16,14 +19,4 @@ Set some basic styles using stylus...
             margin 0
             padding 0 20px
             h1
-              color darken(red,50%)
-
-Coffeescript is ok too...
-
-        coffee:
-          @load = ->
-            document.getElementsByClassName('info')[0].innerText = 'seems that coffee works just fine!'
-
-      body onload='load()'
-        h1 awesome
-        p.info nice one
+              color darken(red, 50%)

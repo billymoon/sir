@@ -2,7 +2,7 @@
 
 ## The polite development server
 
-- serves as plain or pre-processed on-the-fly: coffee-script, less, sass/scss, stylus, markdown, jade, slim
+- serves as plain or pre-processed on-the-fly: less, sass/scss, stylus, markdown, slim
 - livereload
 - multiple and aliased server roots
 - path based proxy (useful to proxy to api server, or assets from live site)
@@ -11,7 +11,7 @@
 - execute shell command on request
 - save cache of requested files (useful for pre-processed output)
 - CORS
-- literate style coffee-script, js, jade, slim, stylus, etc... even md :-) all à la coffee script litrate style (via [npm/illiterate](https://www.npmjs.com/package/illiterate))
+- literate style js, slim, stylus, etc... even md :-) all à la litrate coffee script (via [npm/illiterate](https://www.npmjs.com/package/illiterate))
 
 ## Installation
 
@@ -23,20 +23,19 @@
 
     Options:
 
-      -V, --version                   output the version number
-      -p, --port <port>               specify the port [8080]
-          --npm                       proxy /npm/<library> to npmcdn.com/<library>
-          --jsdelivr                  proxy /jsdelivr/<library> to cdn.jsdelivr.net/<library>
-      -h, --hidden                    enable hidden file serving
-          --backup <backup-folder>    store copy of each served file in `backup` folder
-          --no-livereload             disable livereload watching served directory (add `lr` to querystring of requested resource to inject client script)
-          --no-logs                   disable request logging
-      -f, --format <fmt>              specify the log format string (npmjs.com/package/morgan)
-          --minify                    minify code before serving
-          --compress                  gzip or deflate the response
-          --exec <cmd>                execute command on each request
-          --no-cors                   disable cross origin access serving
-          --babel                     pass all js through babel to convert to more js :)
+      -h, --help                    output usage information
+      -V, --version                 output the version number
+      -p, --port <port>             specify the port [8080]
+      -h, --hidden                  enable hidden file serving
+          --backup <backup-folder>  store copy of each served file in `backup` folder
+          --no-livereload           disable livereload watching served directory (add `lr` to querystring of requested resource to inject client script)
+          --no-logs                 disable request logging
+      -f, --format <fmt>            specify the log format string (npmjs.com/package/morgan)
+          --minify                  minify code before serving
+          --compress                gzip or deflate the response
+          --exec <cmd>              execute command on each request
+          --no-cors                 disable cross origin access serving
+          --babel                   pass all js through babel to convert to more js :)
 
 ## Examples
 
@@ -59,7 +58,7 @@ Make the same request as if the file had already been compiled, and was being se
     <h2 id="the-polite-development-server">The polite development server</h2>
     ...
 
-This also works for sass, coffeescript, jade, etc...
+This also works for sass, less, etc...
 
 ### Requesting the directory listing:
 
@@ -120,8 +119,6 @@ This will serve current directory, except paths starting `/vendor/` which will t
 
 ### Proxy
 
-By default, requests to `/npm/<library>` are proxied to `https://npmcdn.com/<library>` making it easy to load dependencies via the local server so for example `http://localhost:8080/npm/moment` will load moment js from npm-cdn. This can be switched off with the `no-npm` flag.
-
 You can proxy requests based on url, for example...
 
     $ sir . github:https://api.github.com/repos/billymoon/sir
@@ -136,7 +133,7 @@ This will serve current directory, except for paths starting `/github/` which wi
 
 ### Cache
 
-Useful for saving processed version of source files, for example, if you have `index.jade`, and `style.less` and want to save the html and css, add a `--cache backup` flag, and then visit `http://localhost:8080/index.html` in your browser. There should be a `index.html` and a `style.css` in the backup folder.
+Useful for saving processed version of source files, for example, if you have `index.slm`, and `style.less` and want to save the html and css, add a `--cache backup` flag, and then visit `http://localhost:8080/index.html` in your browser. There should be a `index.html` and a `style.css` in the backup folder.
 
 ### Compress
 

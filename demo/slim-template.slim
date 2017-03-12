@@ -1,5 +1,3 @@
-script src="/vendor/jquery/dist/jquery.min.js"
-link rel="stylesheet" href="/vendor/bootstrap/dist/css/bootstrap.css"
 css:
 	body {
 		margin: 15px;
@@ -38,12 +36,3 @@ stylus:
 	.row
 		.col-sm-12
 			#footer.well
-coffee:
-	left = right = null
-	for section, i in document.getElementsByClassName 'section'
-		if i % 2
-			right += section.innerText*1
-		else
-			left += section.innerText*1
-	document.getElementById 'footer'
-		.innerText = "total columns on left = #{left}, and right = #{right} (so grand total of #{left+right})"
