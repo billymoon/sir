@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "unused-ignores": [
+      "babel-*"
+    ]
+  },
+  "critics": {
+    "lint": {"engine": "standard"}
+  }
+}
