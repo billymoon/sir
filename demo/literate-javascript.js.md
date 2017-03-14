@@ -1,4 +1,4 @@
-<link rel='stylesheet' type='text/css' href='literate-sass.css' />
+<link rel='stylesheet' type='text/css' href='sample-stylus.css' />
 <script src='./literate-javascript.js'></script>
 
 # Literate javascript
