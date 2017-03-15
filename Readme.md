@@ -1,6 +1,7 @@
 # Sir
 
 [![Greenkeeper badge](https://badges.greenkeeper.io/billymoon/sir.svg)](https://greenkeeper.io/)
+[![bitHound Overall Score](https://www.bithound.io/github/billymoon/sir/badges/score.svg)](https://www.bithound.io/github/billymoon/sir)
 
 ## The polite development server
 
