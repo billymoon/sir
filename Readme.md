@@ -1,5 +1,7 @@
 # Sir
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/billymoon/sir.svg)](https://greenkeeper.io/)
+
 ## The polite development server
 
 - serves as plain or pre-processed on-the-fly: less, stylus, markdown, slim
