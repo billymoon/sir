@@ -1,4 +1,4 @@
 #!/usr/bin/env node
 
-require('babel-core/register')
+require('@std/esm')
 require('../lib/sir.js').default()
