@@ -10,7 +10,6 @@
 - multiple and aliased server roots
 - path based proxy (useful to proxy to api server, or assets from live site)
 - request logging (customizable, uses [morgan](npmjs.com/package/morgan))
-- beautified pre-processed file output
 - execute shell command on request
 - save cache of requested files (useful for pre-processed output)
 - CORS
