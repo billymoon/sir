@@ -1,6 +1,6 @@
 {
   "name": "sir",
-  "version": "2.1.0",
+  "version": "2.3.1",
   "description": "The polite development server - built with express",
   "keywords": [
     "static",
@@ -34,7 +34,7 @@
     "morgan": "1.8.1",
     "mustache": "^2.2.1",
     "node-watch": "^0.5.1",
-    "proxy-middleware": "billymoon/node-proxy-middleware#patch-1",
+    "proxy-middleware": "billymoon/node-proxy-middleware",
     "request": "^2.69.0",
     "serve-index": "^1.7.3",
     "slm": "^1.0.0",
