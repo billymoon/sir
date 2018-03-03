@@ -1,9 +1,11 @@
+<p align="center"><img src="logo.png"></p>
+
 # Sir
+
+## The polite development server
 
 [![Greenkeeper badge](https://badges.greenkeeper.io/billymoon/sir.svg)](https://greenkeeper.io/)
 [![bitHound Overall Score](https://www.bithound.io/github/billymoon/sir/badges/score.svg)](https://www.bithound.io/github/billymoon/sir)
-
-## The polite development server
 
 - serves as plain or pre-processed on-the-fly: less, stylus, markdown, slim
 - livereload
@@ -140,6 +142,13 @@ Useful for saving processed version of source files, for example, if you have `i
 ### Compress
 
 Add gzip compression to served assets with the `--compress` flag.
+
+## Credits
+
+- logo
+  - https://thenounproject.com/search/?q=robot%20head&i=48532
+  - https://thenounproject.com/search/?q=waiter&i=937156
+  - https://thenounproject.com/search/?q=waiter&i=333350
 
 ## License
 
