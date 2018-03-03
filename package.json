@@ -1,13 +1,15 @@
 {
   "name": "sir",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "description": "The polite development server - built with express",
   "keywords": [
     "static",
     "server",
     "connect"
   ],
-  "scripts": {},
+  "scripts": {
+    "start": "node bin/sir demo"
+  },
   "author": "Billy Moon <billy@itaccess.org>",
   "preferGlobal": true,
   "homepage": "https://github.com/billymoon/sir",
@@ -16,25 +18,28 @@
     "url": "https://github.com/billymoon/sir.git"
   },
   "dependencies": {
-    "cheerio": "^0.22.0",
-    "commander": "2.9.0",
-    "compression": "^1.6.1",
-    "express": "^4.13.4",
+    "babel-core": "^6.26.0",
+    "babel-plugin-transform-react-jsx": "^6.24.1",
+    "babel-preset-env": "^1.6.1",
+    "cheerio": "^1.0.0-rc.2",
+    "commander": "^2.14.1",
+    "compression": "^1.7.2",
+    "express": "^4.16.2",
     "express-minify": "^1.0.0",
-    "illiterate": "1.0.0",
-    "less": "^2.6.0",
-    "lodash": "^4.3.0",
-    "marked": "0.3.6",
-    "mkdirp": "0.5.1",
-    "morgan": "1.8.1",
-    "mustache": "^2.2.1",
-    "node-watch": "^0.5.1",
-    "proxy-middleware": "billymoon/node-proxy-middleware",
-    "request": "^2.69.0",
-    "serve-index": "^1.7.3",
+    "illiterate": "^1.0.0",
+    "less": "^3.0.1",
+    "lodash": "^4.17.5",
+    "marked": "^0.3.17",
+    "mkdirp": "^0.5.1",
+    "morgan": "^1.9.0",
+    "mustache": "^2.3.0",
+    "node-watch": "^0.5.7",
+    "proxy-middleware": "github:billymoon/node-proxy-middleware",
+    "request": "^2.83.0",
+    "serve-index": "^1.9.1",
     "slm": "^1.0.0",
     "stylus": "^0.54.5",
-    "tiny-lr": "1.0.3"
+    "tiny-lr": "^1.1.1"
   },
   "bin": {
     "sir": "./bin/sir"
