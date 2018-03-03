@@ -7,7 +7,9 @@
     "server",
     "connect"
   ],
-  "scripts": {},
+  "scripts": {
+    "start": "node bin/sir demo"
+  },
   "author": "Billy Moon <billy@itaccess.org>",
   "preferGlobal": true,
   "homepage": "https://github.com/billymoon/sir",
@@ -16,6 +18,9 @@
     "url": "https://github.com/billymoon/sir.git"
   },
   "dependencies": {
+    "babel-core": "^6.26.0",
+    "babel-plugin-transform-react-jsx": "^6.24.1",
+    "babel-preset-env": "^1.6.1",
     "cheerio": "^0.22.0",
     "commander": "2.9.0",
     "compression": "^1.6.1",
