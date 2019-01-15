@@ -1,6 +1,6 @@
 {
   "name": "sir",
-  "version": "2.6.1",
+  "version": "2.7.0",
   "description": "The polite development server - built with express",
   "keywords": [
     "static",

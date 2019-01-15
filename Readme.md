@@ -135,6 +135,12 @@ This will serve current directory, except for paths starting `/github/` which wi
 
     https://api.github.com/repos/billymoon/sir/issues?state=closed
 
+You can also set the user agent used by proxied requests, for example if you need to request mobile version of site...
+
+     sir -a "Mozilla/5.0 (iPhone; CPU iPhone OS 11_1 like Mac OS X) AppleWebKit/604.3.1 KHTML, like Gecko) Version/11.0 Mobile/15B5066f Safari/604.1" /:https://stackoverflow.com/
+
+... will proxy the response from stackoverflow presenting itself as an iPhone.
+
 ### Cache
 
 Useful for saving processed version of source files, for example, if you have `index.slm`, and `style.less` and want to save the html and css, add a `--cache backup` flag, and then visit `http://localhost:8080/index.html` in your browser. There should be a `index.html` and a `style.css` in the backup folder.
