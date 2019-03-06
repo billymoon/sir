@@ -8,3 +8,5 @@ lib/extra
 bower_components
 npm-debug.log
 package-lock.json*
+.next
+yarn.lock

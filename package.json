@@ -8,7 +8,8 @@
     "connect"
   ],
   "scripts": {
-    "start": "node bin/sir demo"
+    "demo": "node bin/sir demo",
+    "build": "next build && next export"
   },
   "author": "Billy Moon <billy@itaccess.org>",
   "preferGlobal": true,
@@ -33,8 +34,11 @@
     "mkdirp": "^0.5.1",
     "morgan": "^1.9.0",
     "mustache": "^2.3.0",
+    "next": "^8.0.3",
     "node-watch": "^0.5.7",
     "proxy-middleware": "github:billymoon/node-proxy-middleware",
+    "react": "^16.8.4",
+    "react-dom": "^16.8.4",
     "request": "^2.83.0",
     "serve-index": "^1.9.1",
     "slm": "^1.0.0",
